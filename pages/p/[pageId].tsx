@@ -1,14 +1,15 @@
 import Page from 'interfaces/Page';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import PageDataService from 'services/page-data-service';
 import styles from 'styles/Home.module.css';
 
-const emptyPage = { id: 'box', html: '' };
-
-export async function getServerSideProps(_: GetServerSidePropsContext) {
-  const page = (await PageDataService.get('box')) || emptyPage;
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const pageId = context.query.pageId;
+  const emptyPage = { id: pageId, html: '' };
+  const page = (await PageDataService.get(pageId as string)) || emptyPage;
 
   return {
     props: {
@@ -17,27 +18,30 @@ export async function getServerSideProps(_: GetServerSidePropsContext) {
   };
 }
 
-export default function Box({
+export default function Sandbox({
   page,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [globalContent, setGlobalContent] = useState<string>(page.html);
   const [userContent, setUserContent] = useState<string>('');
+  const router = useRouter();
 
   async function post() {
-    const response = await fetch('/api/pages/box', {
-      headers: [['Content-Type', 'text/html']],
-      method: 'POST',
-      body: userContent,
-    });
+    if (userContent) {
+      const response = await fetch(`/api/p/${router.query.pageId}`, {
+        headers: [['Content-Type', 'text/html']],
+        method: 'POST',
+        body: userContent,
+      });
 
-    if (response.ok) {
-      const page = (await response.json()) as Page;
+      if (response.ok) {
+        const page = (await response.json()) as Page;
 
-      if (globalContent != page.html) {
-        setGlobalContent(page.html);
+        if (globalContent != page.html) {
+          setGlobalContent(page.html);
+        }
+      } else {
+        console.error('Error posting to serverside api!');
       }
-    } else {
-      console.error('Error posting to serverside api!');
     }
   }
 
@@ -54,7 +58,7 @@ export default function Box({
         />
         <meta name="referrer" content="strict-origin" />
 
-        <title>Noforum Sandbox</title>
+        <title>Noforum Sandbox Page</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 

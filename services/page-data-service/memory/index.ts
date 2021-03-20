@@ -19,8 +19,6 @@ async function get(pageId: string) {
 
 async function put(pageId: string, html: string) {
   memoryPages.set(pageId, { id: pageId, html });
-
-  console.log(memoryPages);
 }
 
 const MemoryPageDataService: PageDataService = {
