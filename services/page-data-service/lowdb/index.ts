@@ -9,15 +9,33 @@ interface Schema {
 
 const db = Lowdb(new FileAsync<Schema>('resources/db.json'));
 
+async function init() {
+  (await db).defaults({ pages: [] }).write();
+}
+
 async function get(pageId: string) {
+  const hasPageStore = (await db).has('pages').value();
+
+  if (!hasPageStore) {
+    await init();
+  }
+
   return (await db).get('pages').find({ id: pageId }).value();
 }
 
 async function put(pageId: string, html: string) {
+  const hasPageStore = (await db).has('pages').value();
+
+  if (!hasPageStore) {
+    await init();
+  }
+
   const pageStore = (await db).get('pages');
 
-  if (pageStore.find({ id: pageId }).value()) {
-    pageStore.find({ id: pageId }).assign({ id: pageId, html }).write();
+  const page = pageStore.find({ id: pageId }).value();
+
+  if (page) {
+    pageStore.find({ id: pageId }).assign({ id: pageId, html: page.html + html }).write();
   } else {
     pageStore.push({ id: pageId, html }).write();
   }
@@ -29,35 +47,3 @@ const LowdbPageDataService: PageDataService = {
 };
 
 export default LowdbPageDataService;
-
-// class LowdbPageDataService implements PageDataService {
-//   private db: Lowdb.LowdbAsync<Schema>;
-
-//   async initDb() {
-//     this.db = await Lowdb(new FileAsync<Schema>('resources/db.json'));
-//   }
-
-//   async get(pageId: string) {
-//     if (!this.db) {
-//       await this.initDb();
-//     }
-
-//     return this.db.get('pages').find({ id: pageId }).value();
-//   }
-
-//   async put(pageId: string, html: string) {
-//     if (!this.db) {
-//       await this.initDb();
-//     }
-
-//     const pageStore = this.db.get('pages');
-
-//     if (pageStore.find({ id: pageId }).value()) {
-//       pageStore.find({ id: pageId }).assign({ id: pageId, html }).write();
-//     } else {
-//       pageStore.push({ id: pageId, html }).write();
-//     }
-//   }
-// }
-
-// export default new LowdbPageDataService();

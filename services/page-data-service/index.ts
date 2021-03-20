@@ -1,3 +1,3 @@
-import PageDataService from './memory';
+import PageDataService from './lowdb';
 
 export default PageDataService;

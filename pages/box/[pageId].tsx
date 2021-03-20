@@ -1,14 +1,18 @@
 import Page from 'interfaces/Page';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import PageDataService from 'services/page-data-service';
 import styles from 'styles/Home.module.css';
 
 const emptyPage = { id: 'box', html: '' };
 
-export async function getServerSideProps(_: GetServerSidePropsContext) {
-  const page = (await PageDataService.get('box')) || emptyPage;
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const pageId = context.query.pageId;
+  const page = (await PageDataService.get(pageId as string)) || emptyPage;
+
+  console.log(page);
 
   return {
     props: {
@@ -22,9 +26,10 @@ export default function Box({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [globalContent, setGlobalContent] = useState<string>(page.html);
   const [userContent, setUserContent] = useState<string>('');
+  const router = useRouter();
 
   async function post() {
-    const response = await fetch('/api/pages/box', {
+    const response = await fetch(`/api/pages/${router.query.pageId}`, {
       headers: [['Content-Type', 'text/html']],
       method: 'POST',
       body: userContent,

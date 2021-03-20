@@ -4,7 +4,17 @@ import PageDataService from 'interfaces/PageDataService';
 const memoryPages = new Map<string, Page>();
 
 async function get(pageId: string) {
-  return memoryPages.get(pageId) || { id: pageId, html: '' };
+  return (
+    memoryPages.get(pageId) || {
+      id: pageId,
+      html: `
+      <input id="input_teste">
+      <button onClick=alert(document.getElementById('input_teste').value)>Alertar</button>
+      <br>
+      <a href="/test">Test link</a>
+      `,
+    }
+  );
 }
 
 async function put(pageId: string, html: string) {
