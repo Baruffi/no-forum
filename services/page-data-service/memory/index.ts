@@ -21,9 +21,17 @@ async function put(pageId: string, html: string) {
   memoryPages.set(pageId, { id: pageId, html });
 }
 
+async function del(pageId: string, html: string) {
+  memoryPages.set(pageId, {
+    id: pageId,
+    html: memoryPages.get(pageId).html.replace(html, ''),
+  });
+}
+
 const MemoryPageDataService: PageDataService = {
   get,
   put,
+  del,
 };
 
 export default MemoryPageDataService;
