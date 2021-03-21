@@ -20,7 +20,7 @@ export default function Home() {
 
       <footer className={styles.footer}>
         <div>Noforum Sandbox can be found on:</div>
-        <a className={styles.card} href="https://github.com/baruffi">
+        <a className={styles.card} href="https://github.com/baruffi/no-forum">
           Github
         </a>
       </footer>
