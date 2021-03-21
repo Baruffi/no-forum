@@ -23,14 +23,52 @@ export default function Sandbox({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [globalContent, setGlobalContent] = useState<string>(page.html);
   const [userContent, setUserContent] = useState<string>('');
+
   const router = useRouter();
+  const apiUrl: RequestInfo = `/api/p/${router.query.pageId}`;
+
+  async function get() {
+    const response = await fetch(apiUrl);
+
+    if (response.ok) {
+      const page = (await response.json()) as Page;
+
+      if (globalContent != page.html) {
+        setGlobalContent(page.html);
+      }
+    } else {
+      console.error('Error getting updates from the serverside api!');
+    }
+  }
 
   async function post() {
     if (userContent) {
-      const response = await fetch(`/api/p/${router.query.pageId}`, {
+      const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'text/html']],
         method: 'POST',
         body: userContent,
+      });
+
+      if (response.ok) {
+        const page = (await response.json()) as Page;
+
+        if (globalContent != page.html) {
+          setGlobalContent(page.html);
+        }
+
+        setUserContent('');
+      } else {
+        console.error('Error posting to serverside api!');
+      }
+    }
+  }
+
+  async function clear() {
+    if (globalContent) {
+      const response = await fetch(apiUrl, {
+        headers: [['Content-Type', 'text/html']],
+        method: 'DELETE',
+        body: globalContent,
       });
 
       if (response.ok) {
@@ -46,7 +84,11 @@ export default function Sandbox({
   }
 
   useEffect(() => {
-    post();
+    const nextUpdate = setInterval(get, 10000);
+
+    return () => {
+      clearInterval(nextUpdate);
+    };
   }, [userContent]);
 
   return (
@@ -67,8 +109,15 @@ export default function Sandbox({
         onChange={(e) => setUserContent(e.target.value)}
       />
 
+      <div>
+        <button onClick={() => post()}>Confirm Changes</button>
+        <button onClick={() => clear()}>Clear Global Content</button>
+      </div>
+
       <div className={styles.main}>
-        <div dangerouslySetInnerHTML={{ __html: globalContent }} />
+        <div
+          dangerouslySetInnerHTML={{ __html: globalContent + userContent }}
+        />
       </div>
     </div>
   );

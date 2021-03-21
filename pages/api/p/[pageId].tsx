@@ -4,6 +4,8 @@ import PageDataService from 'services/page-data-service';
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     await PageDataService.put(req.query.pageId as string, req.body);
+  } else if (req.method === 'DELETE') {
+    await PageDataService.del(req.query.pageId as string, req.body);
   }
 
   const page = await PageDataService.get(req.query.pageId as string);
