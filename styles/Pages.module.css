@@ -16,12 +16,12 @@
   align-items: center;
 }
 
-.control {
-  position: fixed;
-  display: none;
-  z-index: 1000;
-}
-
-.chunk:hover .control {
+.controls {
+  top: 0;
+  position: sticky;
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }

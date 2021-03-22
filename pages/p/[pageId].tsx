@@ -23,7 +23,6 @@ export default function Sandbox({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [globalContent, setGlobalContent] = useState<string[]>(page.html);
   const [partialId, setPartialId] = useState<number>(-1);
-  const [partialContent, setPartialContent] = useState<string>('');
   const [userContent, setUserContent] = useState<string>('');
 
   const router = useRouter();
@@ -58,14 +57,17 @@ export default function Sandbox({
           setGlobalContent(page.html);
         }
 
-        setUserContent('');
+        flushLocal();
       } else {
         console.error('Error posting to serverside api!');
       }
     }
   }
 
-  async function replace(oldHtmlItem: string, newHtmlItem: string) {
+  async function replace() {
+    const oldHtmlItem = globalContent[partialId];
+    const newHtmlItem = userContent;
+
     if (oldHtmlItem && newHtmlItem && oldHtmlItem != newHtmlItem) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'application/json']],
@@ -80,15 +82,16 @@ export default function Sandbox({
           setGlobalContent(page.html);
         }
 
-        setPartialId(-1);
-        setPartialContent('');
+        flushLocal();
       } else {
         console.error('Error posting to serverside api!');
       }
     }
   }
 
-  async function remove(htmlItem: string) {
+  async function remove() {
+    const htmlItem = globalContent[partialId];
+
     if (htmlItem) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'text/html']],
@@ -103,12 +106,16 @@ export default function Sandbox({
           setGlobalContent(page.html);
         }
 
-        setPartialId(-1);
-        setPartialContent('');
+        flushLocal();
       } else {
         console.error('Error posting to serverside api!');
       }
     }
+  }
+
+  function flushLocal() {
+    setPartialId(-1);
+    setUserContent('');
   }
 
   useEffect(() => {
@@ -117,7 +124,7 @@ export default function Sandbox({
     return () => {
       clearInterval(nextUpdate);
     };
-  }, [userContent, partialContent]);
+  }, [userContent]);
 
   return (
     <div className={styles.container}>
@@ -132,45 +139,44 @@ export default function Sandbox({
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <textarea
-        value={userContent}
-        onChange={(e) => setUserContent(e.target.value)}
-      />
+      <div className={styles.controls}>
+        <textarea
+          value={userContent}
+          onChange={(e) => setUserContent(e.target.value)}
+        />
 
-      <div>
-        <button onClick={post}>Confirm Changes</button>
+        {partialId === -1 ? (
+          <div>
+            <button onClick={post}>Confirm Changes</button>
+          </div>
+        ) : (
+          <div>
+            <button onClick={replace}>Confirm Changes</button>
+            <button onClick={remove}>Delete</button>
+            <button onClick={flushLocal}>Cancel</button>
+          </div>
+        )}
       </div>
 
       <div className={styles.main}>
         {globalContent.map((htmlItem, idx) => (
-          <div key={idx} className={styles.chunk}>
-            <div
-              className={styles.control}
-              onMouseEnter={() => {
-                if (partialId !== idx) {
-                  setPartialId(idx);
-                  setPartialContent(htmlItem);
-                }
-              }}
-            >
-              <textarea
-                value={partialContent || htmlItem}
-                onChange={(e) => setPartialContent(e.target.value)}
-              />
-              <button onClick={() => replace(htmlItem, partialContent)}>
-                Confirm Changes
-              </button>
-              <button onClick={() => remove(htmlItem)}>Delete</button>
-            </div>
-            <div
-              dangerouslySetInnerHTML={{
-                __html: partialId === idx ? partialContent : htmlItem,
-              }}
-            />
-          </div>
+          <div
+            key={idx}
+            onMouseEnter={() => {
+              if (partialId !== idx) {
+                setPartialId(idx);
+                setUserContent(htmlItem);
+              }
+            }}
+            dangerouslySetInnerHTML={{
+              __html: partialId === idx ? userContent : htmlItem,
+            }}
+          />
         ))}
         <div
-          dangerouslySetInnerHTML={{ __html: userContent }}
+          dangerouslySetInnerHTML={{
+            __html: partialId === -1 ? userContent : '',
+          }}
           onDoubleClick={() => setUserContent('')}
         />
       </div>
