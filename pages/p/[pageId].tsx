@@ -7,9 +7,9 @@ import PageDataService from 'services/page-data-service';
 import styles from 'styles/Pages.module.css';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const pageId = context.query.pageId;
-  const emptyPage = { id: pageId, fragments: [] };
-  const page = (await PageDataService.get(pageId as string)) || emptyPage;
+  const pageId = context.query.pageId as string;
+  const emptyPage: Page = { id: pageId, fragments: [] };
+  const page = (await PageDataService.get(pageId)) || emptyPage;
 
   return {
     props: {

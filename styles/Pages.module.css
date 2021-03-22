@@ -28,14 +28,14 @@
   z-index: 2147483647 !important;
   visibility: visible !important;
   min-width: 300px !important;
-  min-height: 100px !important;
+  min-height: 75px !important;
   max-width: none !important;
   max-height: none !important;
 }
 
 .controls textarea {
   min-width: 300px !important;
-  min-height: 100px !important;
+  min-height: 50px !important;
 }
 
 .controls button {
