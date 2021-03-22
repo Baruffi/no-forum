@@ -6,7 +6,7 @@ import urlParser from 'url-parse';
 function filterHtml(html: string) {
   const urlFilter = new RegExp(
     // Regex to find urls stolen from url-finder on npm
-    /(url\s*\(\s*['"]?\s*)([\w\-\/\.:@&%?]+)(\s*['"]?\s*\))|((href|src)\s*=\s*["']\s*)([\w\-\/\.:@&%?]+)(\s*["'])/,
+    /(url\s*\(\s*['"]?\s*)([\w\-\/\.\+:@&%?]+)(\s*['"]?\s*\))|((href|src)\s*=\s*["']\s*)([\w\-\/\.\+:@&%?]+)(\s*["'])/,
     'g'
   );
   const tagFilter = new RegExp(
@@ -28,16 +28,7 @@ function filterHtml(html: string) {
         !url.includes('href') &&
         !url.includes('src')
       ) {
-        urlFilteredHtml = urlFilteredHtml.replace(
-          url,
-          urlParser(url)
-            .set('protocol', '')
-            .set('slashes', '')
-            .set('username', '')
-            .set('password', '')
-            .set('host', '')
-            .toString()
-        );
+        urlFilteredHtml = urlFilteredHtml.replace(url, urlParser(url).pathname);
       }
     }
   }
