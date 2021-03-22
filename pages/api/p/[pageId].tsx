@@ -1,4 +1,4 @@
-import Replace from 'interfaces/Replace';
+import { Replacement } from 'interfaces/Pages';
 import { NextApiRequest, NextApiResponse } from 'next';
 import PageDataService from 'services/page-data-service';
 import urlParser from 'url-parse';
@@ -56,20 +56,20 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       tagAndUrlFilteredBody
     );
   } else if (req.method === 'PUT') {
-    const { oldHtmlItem, newHtmlItem } = req.body as Replace;
+    const { fragmentId, html } = req.body as Replacement;
 
-    if (newHtmlItem.length > 1000) {
+    if (html.length > 1000) {
       res
         .status(400)
         .json({ message: 'More than 1000 characters at once not allowed!' });
       return;
     }
 
-    const tagAndUrlFilteredItem = filterHtml(newHtmlItem);
+    const tagAndUrlFilteredItem = filterHtml(html);
 
     await PageDataService.rep(
       req.query.pageId as string,
-      oldHtmlItem,
+      fragmentId,
       tagAndUrlFilteredItem
     );
   } else if (req.method === 'DELETE') {
@@ -78,7 +78,11 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const page = await PageDataService.get(req.query.pageId as string);
 
-  res.setHeader('Content-Type', 'application/json');
+  if (page) {
+    res.setHeader('Content-Type', 'application/json');
 
-  res.status(200).json(page);
+    res.status(200).json(page);
+  } else {
+    res.status(204).send('');
+  }
 };

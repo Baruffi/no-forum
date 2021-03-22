@@ -1,7 +1,7 @@
-import Page from 'interfaces/Page';
-import PageDataService from 'interfaces/PageDataService';
+import { Page, PageDataService, PageFragment } from 'interfaces/Pages';
 import Lowdb from 'lowdb';
 import FileAsync from 'lowdb/adapters/FileAsync';
+import { nanoid } from 'nanoid';
 
 interface Schema {
   pages: Page[];
@@ -31,20 +31,21 @@ async function put(pageId: string, html: string) {
   }
 
   const pageStore = (await db).get('pages');
-
   const page = pageStore.find({ id: pageId }).value();
+
+  const id = nanoid();
 
   if (page) {
     pageStore
       .find({ id: pageId })
-      .assign({ id: pageId, html: [...page.html, html] })
+      .assign({ id: pageId, fragments: [...page.fragments, { id, html }] })
       .write();
   } else {
-    pageStore.push({ id: pageId, html: [html] }).write();
+    pageStore.push({ id: pageId, fragments: [{ id, html }] }).write();
   }
 }
 
-async function rep(pageId: string, oldHtmlItem: string, newHtmlItem: string) {
+async function rep(pageId: string, fragmentId: string, html: string) {
   const hasPageStore = (await db).has('pages').value();
 
   if (!hasPageStore) {
@@ -56,21 +57,24 @@ async function rep(pageId: string, oldHtmlItem: string, newHtmlItem: string) {
   const page = pageStore.find({ id: pageId }).value();
 
   if (page) {
-    const idx = page.html.indexOf(oldHtmlItem);
-    const newHtml = [...page.html];
-    newHtml[idx] = newHtmlItem;
+    const htmlFragment = page.fragments.find(
+      (fragment) => fragment.id === fragmentId
+    );
+    const idx = page.fragments.indexOf(htmlFragment);
+    const htmlFragments = [...page.fragments];
+    htmlFragments[idx] = { id: htmlFragment.id, html };
 
     pageStore
       .find({ id: pageId })
       .assign({
         id: pageId,
-        html: newHtml,
+        fragments: htmlFragments,
       })
       .write();
   }
 }
 
-async function del(pageId: string, html: string) {
+async function del(pageId: string, fragmentId: string) {
   const hasPageStore = (await db).has('pages').value();
 
   if (!hasPageStore) {
@@ -86,7 +90,9 @@ async function del(pageId: string, html: string) {
       .find({ id: pageId })
       .assign({
         id: pageId,
-        html: page.html.filter((htmlItem) => htmlItem != html),
+        fragments: page.fragments.filter(
+          (fragment) => fragment.id !== fragmentId
+        ),
       })
       .write();
   }

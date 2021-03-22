@@ -1,4 +1,4 @@
-import Page from 'interfaces/Page';
+import { Page, PageFragment } from 'interfaces/Pages';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -8,7 +8,7 @@ import styles from 'styles/Pages.module.css';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const pageId = context.query.pageId;
-  const emptyPage = { id: pageId, html: [] };
+  const emptyPage = { id: pageId, fragments: [] };
   const page = (await PageDataService.get(pageId as string)) || emptyPage;
 
   return {
@@ -21,8 +21,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 export default function Sandbox({
   page,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [globalContent, setGlobalContent] = useState<string[]>(page.html);
-  const [partialId, setPartialId] = useState<number>(-1);
+  const [globalContent, setGlobalContent] = useState<PageFragment[]>(
+    page.fragments
+  );
+  const [partialId, setPartialId] = useState<string>('');
   const [userContent, setUserContent] = useState<string>('');
 
   const router = useRouter();
@@ -51,14 +53,16 @@ export default function Sandbox({
   }
 
   async function replace() {
-    const oldHtmlItem = globalContent[partialId];
-    const newHtmlItem = userContent;
+    const htmlFragment = globalContent.find(
+      (htmlFragment) => htmlFragment.id === partialId
+    );
+    const html = userContent;
 
-    if (oldHtmlItem && newHtmlItem && oldHtmlItem != newHtmlItem) {
+    if (htmlFragment && html && htmlFragment.html != html) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'application/json']],
         method: 'PUT',
-        body: JSON.stringify({ oldHtmlItem, newHtmlItem }),
+        body: JSON.stringify({ fragmentId: htmlFragment.id, html }),
       });
 
       const success = await handleResponse(response);
@@ -70,13 +74,15 @@ export default function Sandbox({
   }
 
   async function remove() {
-    const htmlItem = globalContent[partialId];
+    const htmlFragment = globalContent.find(
+      (htmlFragment) => htmlFragment.id === partialId
+    );
 
-    if (htmlItem) {
+    if (htmlFragment) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'text/html']],
         method: 'DELETE',
-        body: htmlItem,
+        body: htmlFragment.id,
       });
 
       const success = await handleResponse(response);
@@ -89,10 +95,12 @@ export default function Sandbox({
 
   async function handleResponse(response: Response) {
     if (response.ok) {
-      const newPage = (await response.json()) as Page;
+      if (response.status === 200) {
+        const newPage = (await response.json()) as Page;
 
-      if (globalContent != newPage.html) {
-        setGlobalContent(newPage.html);
+        if (globalContent != newPage.fragments) {
+          setGlobalContent(newPage.fragments);
+        }
       }
 
       return true;
@@ -104,7 +112,7 @@ export default function Sandbox({
   }
 
   function flushLocal() {
-    setPartialId(-1);
+    setPartialId('');
     setUserContent('');
   }
 
@@ -120,10 +128,10 @@ export default function Sandbox({
     setUserContent(e.target.value);
   }
 
-  function hoverHtmlItem(htmlItem: string, idx: number) {
-    if (partialId !== idx) {
-      setPartialId(idx);
-      setUserContent(htmlItem);
+  function hoverHtmlFragment(id: string, html: string) {
+    if (partialId !== id) {
+      setPartialId(id);
+      setUserContent(html);
     }
   }
 
@@ -137,32 +145,35 @@ export default function Sandbox({
       <div className={styles.controls}>
         <textarea value={userContent} onChange={updateUserContent} />
 
-        {partialId === -1 ? (
-          <div>
-            <button onClick={post}>Confirm Changes</button>
-          </div>
-        ) : (
+        {partialId ? (
           <div>
             <button onClick={replace}>Confirm Changes</button>
             <button onClick={remove}>Delete</button>
             <button onClick={flushLocal}>Cancel</button>
           </div>
+        ) : (
+          <div>
+            <button onClick={post}>Confirm Changes</button>
+          </div>
         )}
       </div>
 
       <div className={styles.main}>
-        {globalContent.map((htmlItem, idx) => (
+        {globalContent.map((htmlFragment) => (
           <div
-            key={idx}
-            onMouseEnter={() => hoverHtmlItem(htmlItem, idx)}
+            key={htmlFragment.id}
+            onMouseEnter={() =>
+              hoverHtmlFragment(htmlFragment.id, htmlFragment.html)
+            }
             dangerouslySetInnerHTML={{
-              __html: partialId === idx ? userContent : htmlItem,
+              __html:
+                partialId === htmlFragment.id ? userContent : htmlFragment.html,
             }}
           />
         ))}
         <div
           dangerouslySetInnerHTML={{
-            __html: partialId === -1 ? userContent : '',
+            __html: partialId ? '' : userContent,
           }}
         />
       </div>
