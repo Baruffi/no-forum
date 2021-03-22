@@ -17,11 +17,36 @@
 }
 
 .controls {
-  top: 0;
-  position: sticky;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  top: 0 !important;
+  position: sticky !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+
+  /* tags to make sure it will be always visible on top of the screen */
+  z-index: 2147483647 !important;
+  visibility: visible !important;
+  min-width: 300px !important;
+  min-height: 100px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.controls textarea {
+  min-width: 300px !important;
+  min-height: 100px !important;
+}
+
+.controls button {
+  min-width: 50px !important;
+  min-height: 25px !important;
+}
+
+.controls * {
+  /* tags to make sure it will be always visible on top of the screen */
+  z-index: 2147483647 !important;
+  visibility: visible !important;
+  max-width: none !important;
+  max-height: none !important;
 }

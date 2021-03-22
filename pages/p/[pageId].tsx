@@ -2,7 +2,7 @@ import Page from 'interfaces/Page';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import PageDataService from 'services/page-data-service';
 import styles from 'styles/Pages.module.css';
 
@@ -31,15 +31,7 @@ export default function Sandbox({
   async function get() {
     const response = await fetch(apiUrl);
 
-    if (response.ok) {
-      const page = (await response.json()) as Page;
-
-      if (globalContent != page.html) {
-        setGlobalContent(page.html);
-      }
-    } else {
-      console.error('Error getting updates from the serverside api!');
-    }
+    handleResponse(response);
   }
 
   async function post() {
@@ -50,16 +42,10 @@ export default function Sandbox({
         body: userContent,
       });
 
-      if (response.ok) {
-        const page = (await response.json()) as Page;
+      const success = await handleResponse(response);
 
-        if (globalContent != page.html) {
-          setGlobalContent(page.html);
-        }
-
+      if (success) {
         flushLocal();
-      } else {
-        console.error('Error posting to serverside api!');
       }
     }
   }
@@ -75,16 +61,10 @@ export default function Sandbox({
         body: JSON.stringify({ oldHtmlItem, newHtmlItem }),
       });
 
-      if (response.ok) {
-        const page = (await response.json()) as Page;
+      const success = await handleResponse(response);
 
-        if (globalContent != page.html) {
-          setGlobalContent(page.html);
-        }
-
+      if (success) {
         flushLocal();
-      } else {
-        console.error('Error posting to serverside api!');
       }
     }
   }
@@ -99,17 +79,27 @@ export default function Sandbox({
         body: htmlItem,
       });
 
-      if (response.ok) {
-        const page = (await response.json()) as Page;
+      const success = await handleResponse(response);
 
-        if (globalContent != page.html) {
-          setGlobalContent(page.html);
-        }
-
+      if (success) {
         flushLocal();
-      } else {
-        console.error('Error posting to serverside api!');
       }
+    }
+  }
+
+  async function handleResponse(response: Response) {
+    if (response.ok) {
+      const newPage = (await response.json()) as Page;
+
+      if (globalContent != newPage.html) {
+        setGlobalContent(newPage.html);
+      }
+
+      return true;
+    } else {
+      console.error('Error communicating with the serverside api!');
+
+      return false;
     }
   }
 
@@ -126,24 +116,26 @@ export default function Sandbox({
     };
   }, [userContent]);
 
+  function updateUserContent(e: ChangeEvent<HTMLTextAreaElement>) {
+    setUserContent(e.target.value);
+  }
+
+  function hoverHtmlItem(htmlItem: string, idx: number) {
+    if (partialId !== idx) {
+      setPartialId(idx);
+      setUserContent(htmlItem);
+    }
+  }
+
   return (
     <div className={styles.container}>
       <Head>
-        <meta
-          httpEquiv="Content-Security-Policy"
-          content="style-src 'self' 'unsafe-inline'; object-src 'none'; default-src 'self';"
-        />
-        <meta name="referrer" content="strict-origin" />
-
         <title>Noforum Sandbox Page</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <div className={styles.controls}>
-        <textarea
-          value={userContent}
-          onChange={(e) => setUserContent(e.target.value)}
-        />
+        <textarea value={userContent} onChange={updateUserContent} />
 
         {partialId === -1 ? (
           <div>
@@ -162,12 +154,7 @@ export default function Sandbox({
         {globalContent.map((htmlItem, idx) => (
           <div
             key={idx}
-            onMouseEnter={() => {
-              if (partialId !== idx) {
-                setPartialId(idx);
-                setUserContent(htmlItem);
-              }
-            }}
+            onMouseEnter={() => hoverHtmlItem(htmlItem, idx)}
             dangerouslySetInnerHTML={{
               __html: partialId === idx ? userContent : htmlItem,
             }}
@@ -177,7 +164,6 @@ export default function Sandbox({
           dangerouslySetInnerHTML={{
             __html: partialId === -1 ? userContent : '',
           }}
-          onDoubleClick={() => setUserContent('')}
         />
       </div>
     </div>
