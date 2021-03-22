@@ -4,11 +4,11 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import PageDataService from 'services/page-data-service';
-import styles from 'styles/Home.module.css';
+import styles from 'styles/Pages.module.css';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const pageId = context.query.pageId;
-  const emptyPage = { id: pageId, html: '' };
+  const emptyPage = { id: pageId, html: [] };
   const page = (await PageDataService.get(pageId as string)) || emptyPage;
 
   return {
@@ -21,7 +21,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 export default function Sandbox({
   page,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [globalContent, setGlobalContent] = useState<string>(page.html);
+  const [globalContent, setGlobalContent] = useState<string[]>(page.html);
+  const [partialId, setPartialId] = useState<number>(-1);
+  const [partialContent, setPartialContent] = useState<string>('');
   const [userContent, setUserContent] = useState<string>('');
 
   const router = useRouter();
@@ -63,12 +65,12 @@ export default function Sandbox({
     }
   }
 
-  async function clear() {
-    if (globalContent) {
+  async function replace(oldHtmlItem: string, newHtmlItem: string) {
+    if (oldHtmlItem && newHtmlItem && oldHtmlItem != newHtmlItem) {
       const response = await fetch(apiUrl, {
-        headers: [['Content-Type', 'text/html']],
-        method: 'DELETE',
-        body: globalContent,
+        headers: [['Content-Type', 'application/json']],
+        method: 'PUT',
+        body: JSON.stringify({ oldHtmlItem, newHtmlItem }),
       });
 
       if (response.ok) {
@@ -77,6 +79,32 @@ export default function Sandbox({
         if (globalContent != page.html) {
           setGlobalContent(page.html);
         }
+
+        setPartialId(-1);
+        setPartialContent('');
+      } else {
+        console.error('Error posting to serverside api!');
+      }
+    }
+  }
+
+  async function remove(htmlItem: string) {
+    if (htmlItem) {
+      const response = await fetch(apiUrl, {
+        headers: [['Content-Type', 'text/html']],
+        method: 'DELETE',
+        body: htmlItem,
+      });
+
+      if (response.ok) {
+        const page = (await response.json()) as Page;
+
+        if (globalContent != page.html) {
+          setGlobalContent(page.html);
+        }
+
+        setPartialId(-1);
+        setPartialContent('');
       } else {
         console.error('Error posting to serverside api!');
       }
@@ -89,7 +117,7 @@ export default function Sandbox({
     return () => {
       clearInterval(nextUpdate);
     };
-  }, [userContent]);
+  }, [userContent, partialContent]);
 
   return (
     <div className={styles.container}>
@@ -110,13 +138,40 @@ export default function Sandbox({
       />
 
       <div>
-        <button onClick={() => post()}>Confirm Changes</button>
-        <button onClick={() => clear()}>Clear Global Content</button>
+        <button onClick={post}>Confirm Changes</button>
       </div>
 
       <div className={styles.main}>
+        {globalContent.map((htmlItem, idx) => (
+          <div key={idx} className={styles.chunk}>
+            <div
+              className={styles.control}
+              onMouseEnter={() => {
+                if (partialId !== idx) {
+                  setPartialId(idx);
+                  setPartialContent(htmlItem);
+                }
+              }}
+            >
+              <textarea
+                value={partialContent || htmlItem}
+                onChange={(e) => setPartialContent(e.target.value)}
+              />
+              <button onClick={() => replace(htmlItem, partialContent)}>
+                Confirm Changes
+              </button>
+              <button onClick={() => remove(htmlItem)}>Delete</button>
+            </div>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: partialId === idx ? partialContent : htmlItem,
+              }}
+            />
+          </div>
+        ))}
         <div
-          dangerouslySetInnerHTML={{ __html: globalContent + userContent }}
+          dangerouslySetInnerHTML={{ __html: userContent }}
+          onDoubleClick={() => setUserContent('')}
         />
       </div>
     </div>

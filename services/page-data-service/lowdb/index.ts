@@ -37,10 +37,36 @@ async function put(pageId: string, html: string) {
   if (page) {
     pageStore
       .find({ id: pageId })
-      .assign({ id: pageId, html: page.html + html })
+      .assign({ id: pageId, html: [...page.html, html] })
       .write();
   } else {
-    pageStore.push({ id: pageId, html }).write();
+    pageStore.push({ id: pageId, html: [html] }).write();
+  }
+}
+
+async function rep(pageId: string, oldHtmlItem: string, newHtmlItem: string) {
+  const hasPageStore = (await db).has('pages').value();
+
+  if (!hasPageStore) {
+    await init();
+  }
+
+  const pageStore = (await db).get('pages');
+
+  const page = pageStore.find({ id: pageId }).value();
+
+  if (page) {
+    const idx = page.html.indexOf(oldHtmlItem);
+    const newHtml = [...page.html];
+    newHtml[idx] = newHtmlItem;
+
+    pageStore
+      .find({ id: pageId })
+      .assign({
+        id: pageId,
+        html: newHtml,
+      })
+      .write();
   }
 }
 
@@ -58,7 +84,10 @@ async function del(pageId: string, html: string) {
   if (page) {
     pageStore
       .find({ id: pageId })
-      .assign({ id: pageId, html: page.html.replace(html, '') })
+      .assign({
+        id: pageId,
+        html: page.html.filter((htmlItem) => htmlItem != html),
+      })
       .write();
   }
 }
@@ -66,6 +95,7 @@ async function del(pageId: string, html: string) {
 const LowdbPageDataService: PageDataService = {
   get,
   put,
+  rep,
   del,
 };
 
