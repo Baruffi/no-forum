@@ -1,27 +1,127 @@
+import { Parser } from 'htmlparser2';
 import { Replacement } from 'interfaces/Pages';
-import { NextApiRequest, NextApiResponse } from 'next';
 import DOMPurify from 'isomorphic-dompurify';
-import PageDataService from 'services/page-data-service';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { maxUserContentLength } from 'resources/constants';
-import sanitizeHtml from 'sanitize-html';
+import PageDataService from 'services/page-data-service';
+
+interface ChunkList {
+  [s: string]: string;
+}
+
+function customSanitize(html: string) {
+  const cssBadUrl = /[\w-]+:\s*url\(\s*(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?\s*\)(.*?;)?/gis;
+  const cssBadZIndex = /z-index:\s*(-)?\d\d\d\d+\s*;/gis;
+  const cssChunks: ChunkList = {};
+  const noTextChunks: ChunkList = {};
+
+  let openedWithNoText = [];
+  let openCss = 0;
+
+  const parser = new Parser({
+    onopentag(name, attribs) {
+      if (name === 'style') {
+        openCss++;
+      }
+
+      if (attribs.style) {
+        cssChunks[attribs.style] = attribs.style
+          .replace(cssBadUrl, '')
+          .replace(cssBadZIndex, '');
+      }
+
+      openedWithNoText.push(name);
+    },
+    ontext(text) {
+      if (openCss) {
+        cssChunks[text] = text.replace(cssBadUrl, '').replace(cssBadZIndex, '');
+      }
+
+      if (text.trim()) {
+        openedWithNoText = [];
+      }
+    },
+    onclosetag(name) {
+      if (openedWithNoText.length > 0 && openedWithNoText[0] === name) {
+        if (
+          !(
+            openedWithNoText.includes('input') ||
+            openedWithNoText.includes('select') ||
+            openedWithNoText.includes('textarea') ||
+            openedWithNoText.includes('button') ||
+            openedWithNoText.includes('fieldset') ||
+            openedWithNoText.includes('datalist') ||
+            openedWithNoText.includes('output') ||
+            openedWithNoText.includes('optgroup')
+          )
+        ) {
+          const emptyTags =
+            openedWithNoText
+              .map((emptyTag) => `<\\s*${emptyTag}(\\s*[\\w\\d-]+=.*?)*?>\\s*`)
+              .join('') +
+            openedWithNoText
+              .reverse()
+              .map((emptyTag) => `</\\s*${emptyTag}(\\s*[\\w\\d-]+=.*?)*?>\\s*`)
+              .join('');
+
+          noTextChunks[emptyTags] = '';
+        }
+
+        openedWithNoText = [];
+      }
+
+      if (name === 'style' && openCss) {
+        openCss--;
+      }
+    },
+  });
+
+  parser.write(html);
+  parser.end();
+
+  let saferHtml = html;
+
+  console.log('CSS');
+
+  for (const chunk in cssChunks) {
+    if (Object.prototype.hasOwnProperty.call(cssChunks, chunk)) {
+      const cssChunk = cssChunks[chunk];
+      console.log(chunk);
+      console.log(cssChunk);
+      saferHtml = saferHtml.replace(chunk, cssChunk).trim();
+    }
+  }
+
+  console.log('NO TEXT');
+
+  for (const chunk in noTextChunks) {
+    if (Object.prototype.hasOwnProperty.call(noTextChunks, chunk)) {
+      const noTextChunk = noTextChunks[chunk];
+      console.log(chunk);
+      console.log(noTextChunk);
+      saferHtml = saferHtml.replace(RegExp(chunk, 'gs'), noTextChunk).trim();
+    }
+  }
+
+  const remainingTags = saferHtml.match(/<\s*\w+(\s*[\w\d-]+=.*?)*?>/);
+
+  if (remainingTags && remainingTags.join('') === '<style>') {
+    console.log('ONLY STYLE');
+    return '';
+  }
+
+  return saferHtml;
+}
 
 function filterHtml(html: string) {
-  const purifiedHtml = DOMPurify.sanitize(html);
+  // Add body tags to not lose styles in the beginning to DOMPurify
+  const purifiedHtml = DOMPurify.sanitize(`<body>${html}</body>`, {
+    ALLOWED_URI_REGEXP: /^(\/?[^:#/\\])*$/,
+  });
 
-  return sanitizeHtml(purifiedHtml, {
-    allowVulnerableTags: true,
-    allowedTags: false,
-    allowedAttributes: false,
-    allowedSchemes: [],
-    exclusiveFilter: function (frame) {
-      const cssUrl = /url\s*\(.*?\)/gis;
+  console.log(purifiedHtml);
 
-      return (
-        (frame.tag === 'style' && cssUrl.test(frame.text)) ||
-        cssUrl.test(frame.attribs['style'])
-      );
-    },
-  }).trim();
+  return customSanitize(purifiedHtml);
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
