@@ -3,6 +3,7 @@ import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { ChangeEvent, useEffect, useState } from 'react';
+import { maxUserContentLength } from 'resources/constants';
 import PageDataService from 'services/page-data-service';
 import styles from 'styles/Pages.module.css';
 
@@ -24,8 +25,9 @@ export default function Sandbox({
   const [globalContent, setGlobalContent] = useState<PageFragment[]>(
     page.fragments
   );
-  const [partialId, setPartialId] = useState<string>('');
+  const [fragmentId, setFragmentId] = useState<string>('');
   const [userContent, setUserContent] = useState<string>('');
+  const [userCache, setUserCache] = useState<string>('');
 
   const router = useRouter();
   const apiUrl: RequestInfo = `/api/p/${(router.query.pageId as string[]).join(
@@ -56,7 +58,7 @@ export default function Sandbox({
 
   async function replace() {
     const htmlFragment = globalContent.find(
-      (htmlFragment) => htmlFragment.id === partialId
+      (htmlFragment) => htmlFragment.id === fragmentId
     );
     const html = userContent;
 
@@ -77,7 +79,7 @@ export default function Sandbox({
 
   async function remove() {
     const htmlFragment = globalContent.find(
-      (htmlFragment) => htmlFragment.id === partialId
+      (htmlFragment) => htmlFragment.id === fragmentId
     );
 
     if (htmlFragment) {
@@ -114,12 +116,13 @@ export default function Sandbox({
   }
 
   function flushLocal() {
-    setPartialId('');
-    setUserContent('');
+    setUserContent(userCache);
+    setUserCache('');
+    setFragmentId('');
   }
 
   useEffect(() => {
-    const nextUpdate = setInterval(get, 10000);
+    const nextUpdate = setInterval(get, 10000); // passively update the page every 10 seconds unless the user interacts with it
 
     return () => {
       clearInterval(nextUpdate);
@@ -127,12 +130,16 @@ export default function Sandbox({
   }, [userContent]);
 
   function updateUserContent(e: ChangeEvent<HTMLTextAreaElement>) {
-    setUserContent(e.target.value);
+    setUserContent(e.target.value.substr(0, maxUserContentLength));
   }
 
   function hoverHtmlFragment(id: string, html: string) {
-    if (partialId !== id) {
-      setPartialId(id);
+    if (fragmentId !== id) {
+      if (!fragmentId) {
+        setUserCache(userContent);
+      }
+
+      setFragmentId(id);
       setUserContent(html);
     }
   }
@@ -145,9 +152,13 @@ export default function Sandbox({
       </Head>
 
       <div className={styles.controls}>
-        <textarea value={userContent} onChange={updateUserContent} />
-
-        {partialId ? (
+        <textarea
+          value={userContent}
+          onChange={updateUserContent}
+          maxLength={maxUserContentLength}
+        />
+        {userContent.length}/{maxUserContentLength}
+        {fragmentId ? (
           <div>
             <button onClick={replace}>Confirm Changes</button>
             <button onClick={remove}>Delete</button>
@@ -169,13 +180,13 @@ export default function Sandbox({
             }
             dangerouslySetInnerHTML={{
               __html:
-                partialId === htmlFragment.id ? userContent : htmlFragment.html,
+                fragmentId === htmlFragment.id ? userContent : htmlFragment.html,
             }}
           />
         ))}
         <div
           dangerouslySetInnerHTML={{
-            __html: partialId ? '' : userContent,
+            __html: fragmentId ? '' : userContent,
           }}
         />
       </div>

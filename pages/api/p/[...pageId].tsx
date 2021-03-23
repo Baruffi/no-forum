@@ -2,9 +2,26 @@ import { Replacement } from 'interfaces/Pages';
 import { NextApiRequest, NextApiResponse } from 'next';
 import DOMPurify from 'isomorphic-dompurify';
 import PageDataService from 'services/page-data-service';
+import { maxUserContentLength } from 'resources/constants';
+import sanitizeHtml from 'sanitize-html';
 
 function filterHtml(html: string) {
-  return DOMPurify.sanitize(html);
+  const purifiedHtml = DOMPurify.sanitize(html);
+
+  return sanitizeHtml(purifiedHtml, {
+    allowVulnerableTags: true,
+    allowedTags: false,
+    allowedAttributes: false,
+    allowedSchemes: [],
+    exclusiveFilter: function (frame) {
+      const cssUrl = /url\s*\(.*?\)/gis;
+
+      return (
+        (frame.tag === 'style' && cssUrl.test(frame.text)) ||
+        cssUrl.test(frame.attribs['style'])
+      );
+    },
+  }).trim();
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
@@ -13,10 +30,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const body = req.body as string;
 
-    if (body.length > 1000) {
-      res
-        .status(400)
-        .json({ message: 'More than 1000 characters at once not allowed!' });
+    if (body.length > maxUserContentLength) {
+      res.status(400).json({
+        message: `More than ${maxUserContentLength} characters at once not allowed!`,
+      });
       return;
     }
 
@@ -28,10 +45,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   } else if (req.method === 'PUT') {
     const { fragmentId, html } = req.body as Replacement;
 
-    if (html.length > 1000) {
-      res
-        .status(400)
-        .json({ message: 'More than 1000 characters at once not allowed!' });
+    if (html.length > maxUserContentLength) {
+      res.status(400).json({
+        message: `More than ${maxUserContentLength} characters at once not allowed!`,
+      });
       return;
     }
 
