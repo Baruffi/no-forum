@@ -7,7 +7,7 @@ import PageDataService from 'services/page-data-service';
 import styles from 'styles/Pages.module.css';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const pageId = context.query.pageId as string;
+  const pageId = (context.query.pageId as string[]).join('/');
   const emptyPage: Page = { id: pageId, fragments: [] };
   const page = (await PageDataService.get(pageId)) || emptyPage;
 
@@ -28,7 +28,9 @@ export default function Sandbox({
   const [userContent, setUserContent] = useState<string>('');
 
   const router = useRouter();
-  const apiUrl: RequestInfo = `/api/p/${router.query.pageId}`;
+  const apiUrl: RequestInfo = `/api/p/${(router.query.pageId as string[]).join(
+    '/'
+  )}`;
 
   async function get() {
     const response = await fetch(apiUrl);

@@ -1,7 +1,16 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { ChangeEvent, useState } from 'react';
 import styles from 'styles/Home.module.css';
 
 export default function Home() {
+  const [inputPath, setInputPath] = useState('');
+  const router = useRouter();
+
+  function updateInputPath(e: ChangeEvent<HTMLInputElement>) {
+    setInputPath(e.target.value);
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -14,7 +23,21 @@ export default function Home() {
 
         <p className={styles.description}>
           Get started by accessing{' '}
-          <code className={styles.code}>/p/[any-path-of-your-choice]</code>
+          <form
+            className={styles.code}
+            onSubmit={(e) => {
+              e.preventDefault();
+              router.push(`/p/${inputPath}`);
+            }}
+          >
+            /p/
+            <input
+              placeholder="any-path-of-your-choice"
+              value={inputPath}
+              onChange={updateInputPath}
+            />
+            <button type="submit">Go!</button>
+          </form>
         </p>
       </main>
 
