@@ -10,8 +10,12 @@ interface ChunkList {
 }
 
 function customSanitize(html: string) {
-  const cssBadUrl = /[\w-]+:\s*url\(\s*(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?\s*\)(.*?;)?/gis;
-  const cssBadZIndex = /z-index:\s*(-)?\d\d\d\d+\s*;/gis;
+  const cssBadUrl = /[\w-]+\s*:\s*url\(\s*(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?\s*\)((.|\s)*?;)?/g;
+  const cssBadZIndex = /z-index\s*:\s*(-)?\d\d\d\d+\s*;?/g;
+  const htmlEmptyStyleTag = /<style(\s*|([\w-]+="(.|\s)*?"))*?>\s*?<\/\s*style\s*>\s*/g;
+  const htmlEmptyStyleAttribute = /\s*style\s*=\s*"\s*"/g;
+  const htmlOpenTagStr = '<TAGHERE(\\s*|([\\w-]+="(.|\\s)*?"))*?>\\s*';
+  const htmlCloseTagStr = '</\\s*TAGHERE\\s*>\\s*';
   const cssChunks: ChunkList = {};
   const noTextChunks: ChunkList = {};
 
@@ -57,11 +61,15 @@ function customSanitize(html: string) {
         ) {
           const emptyTags =
             openedWithNoText
-              .map((emptyTag) => `<\\s*${emptyTag}(\\s*[\\w\\d-]+=.*?)*?>\\s*`)
+              .map(
+                (emptyTag) => `${htmlOpenTagStr.replace('TAGHERE', emptyTag)}`
+              )
               .join('') +
             openedWithNoText
               .reverse()
-              .map((emptyTag) => `</\\s*${emptyTag}(\\s*[\\w\\d-]+=.*?)*?>\\s*`)
+              .map(
+                (emptyTag) => `${htmlCloseTagStr.replace('TAGHERE', emptyTag)}`
+              )
               .join('');
 
           noTextChunks[emptyTags] = '';
@@ -79,7 +87,8 @@ function customSanitize(html: string) {
   parser.write(html);
   parser.end();
 
-  let saferHtml = html;
+  let cleanHtml = html;
+  let invisible = false;
 
   console.log('CSS');
 
@@ -88,7 +97,7 @@ function customSanitize(html: string) {
       const cssChunk = cssChunks[chunk];
       console.log(chunk);
       console.log(cssChunk);
-      saferHtml = saferHtml.replace(chunk, cssChunk).trim();
+      cleanHtml = cleanHtml.replace(chunk, cssChunk).trim();
     }
   }
 
@@ -99,26 +108,53 @@ function customSanitize(html: string) {
       const noTextChunk = noTextChunks[chunk];
       console.log(chunk);
       console.log(noTextChunk);
-      saferHtml = saferHtml.replace(RegExp(chunk, 'gs'), noTextChunk).trim();
+      cleanHtml = cleanHtml.replace(RegExp(chunk, 'g'), noTextChunk).trim();
     }
   }
 
-  const remainingTags = saferHtml.match(/<\s*\w+(\s*[\w\d-]+=.*?)*?>/);
+  console.log('CLEAN');
 
-  if (remainingTags && remainingTags.join('') === '<style>') {
-    console.log('ONLY STYLE');
-    return '';
+  cleanHtml = cleanHtml
+    .replace(htmlEmptyStyleTag, '')
+    .replace(htmlEmptyStyleAttribute, '');
+
+  console.log(cleanHtml);
+
+  if (cleanHtml) {
+    const remainingTags = cleanHtml.match(
+      RegExp(htmlOpenTagStr.replace('TAGHERE', '[\\w-]+'), 'g')
+    );
+    const remainingStyleTags = cleanHtml.match(
+      RegExp(htmlOpenTagStr.replace('TAGHERE', 'style'), 'g')
+    );
+
+    if (
+      remainingTags &&
+      remainingStyleTags &&
+      remainingTags.join('') === remainingStyleTags.join('')
+    ) {
+      console.log('ONLY STYLE');
+      invisible = true;
+    }
   }
 
-  return saferHtml;
+  return { cleanHtml, invisible };
 }
 
 function filterHtml(html: string) {
+  console.log('RAW');
+  console.log(html);
+
+  if (html.includes('{') && !html.includes('<')) {
+    html = `<style>${html}</style>`;
+  }
+
   // Add body tags to not lose styles in the beginning to DOMPurify
   const purifiedHtml = DOMPurify.sanitize(`<body>${html}</body>`, {
     ALLOWED_URI_REGEXP: /^(\/?[^:#/\\])*$/,
   });
 
+  console.log('PURE');
   console.log(purifiedHtml);
 
   return customSanitize(purifiedHtml);
@@ -137,10 +173,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return;
     }
 
-    const filteredHtml = filterHtml(body);
+    const { cleanHtml, invisible } = filterHtml(body);
 
-    if (filteredHtml) {
-      await PageDataService.put(pageId, filteredHtml);
+    if (cleanHtml) {
+      await PageDataService.put(pageId, cleanHtml, invisible);
     }
   } else if (req.method === 'PUT') {
     const { fragmentId, html } = req.body as Replacement;
@@ -152,10 +188,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return;
     }
 
-    const filteredHtml = filterHtml(html);
+    const { cleanHtml, invisible } = filterHtml(html);
 
-    if (filteredHtml) {
-      await PageDataService.rep(pageId, fragmentId, filteredHtml);
+    if (cleanHtml) {
+      await PageDataService.rep(pageId, fragmentId, cleanHtml, invisible);
     }
   } else if (req.method === 'DELETE') {
     await PageDataService.del(pageId, req.body);

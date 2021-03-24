@@ -28,6 +28,7 @@ export default function Sandbox({
   const [fragmentId, setFragmentId] = useState<string>('');
   const [userContent, setUserContent] = useState<string>('');
   const [userCache, setUserCache] = useState<string>('');
+  const [showInvisibles, setShowInvisibles] = useState<boolean>(false);
 
   const router = useRouter();
   const apiUrl: RequestInfo = `/api/p/${(router.query.pageId as string[]).join(
@@ -133,6 +134,10 @@ export default function Sandbox({
     setUserContent(e.target.value.substr(0, maxUserContentLength));
   }
 
+  function toggleShowInvisibles() {
+    setShowInvisibles(!showInvisibles);
+  }
+
   function hoverHtmlFragment(id: string, html: string) {
     if (fragmentId !== id) {
       if (!fragmentId) {
@@ -142,6 +147,17 @@ export default function Sandbox({
       setFragmentId(id);
       setUserContent(html);
     }
+  }
+
+  function isCss(html: string) {
+    return !html.includes('<') && html.includes('{');
+  }
+
+  function getRandomColorFor(fragmentId: string) {
+    return (
+      '#' +
+      (((1 << 24) * ((fragmentId.charCodeAt(0) - 48) / 122)) | 0).toString(16)
+    );
   }
 
   return (
@@ -158,6 +174,9 @@ export default function Sandbox({
           maxLength={maxUserContentLength}
         />
         {userContent.length}/{maxUserContentLength}
+        <button onClick={toggleShowInvisibles}>
+          {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
+        </button>
         {fragmentId ? (
           <div>
             <button onClick={replace}>Confirm Changes</button>
@@ -175,18 +194,43 @@ export default function Sandbox({
         {globalContent.map((htmlFragment) => (
           <div
             key={htmlFragment.id}
+            style={
+              showInvisibles
+                ? htmlFragment.invisible
+                  ? {
+                      backgroundColor: getRandomColorFor(htmlFragment.id),
+                      minWidth: '200px',
+                      minHeight: '200px',
+                      maxWidth: '200px',
+                      maxHeight: '200px',
+                    }
+                  : {
+                      display: 'none',
+                    }
+                : {}
+            }
             onMouseEnter={() =>
               hoverHtmlFragment(htmlFragment.id, htmlFragment.html)
             }
             dangerouslySetInnerHTML={{
               __html:
-                fragmentId === htmlFragment.id ? userContent : htmlFragment.html,
+                fragmentId === htmlFragment.id
+                  ? isCss(userContent)
+                    ? `<style>${userContent}</style>`
+                    : userContent
+                  : htmlFragment.html,
             }}
           />
         ))}
         <div
           dangerouslySetInnerHTML={{
-            __html: fragmentId ? '' : userContent,
+            __html: fragmentId
+              ? isCss(userCache)
+                ? `<style>${userCache}</style>`
+                : userCache
+              : isCss(userContent)
+              ? `<style>${userContent}</style>`
+              : userContent,
           }}
         />
       </div>
