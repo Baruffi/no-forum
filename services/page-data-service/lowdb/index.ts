@@ -1,4 +1,4 @@
-import { Page, PageDataService, PageFragment } from 'interfaces/Pages';
+import { Page, PageDataService } from 'interfaces/Pages';
 import Lowdb from 'lowdb';
 import FileAsync from 'lowdb/adapters/FileAsync';
 import { nanoid } from 'nanoid';
@@ -23,7 +23,7 @@ async function get(pageId: string) {
   return (await db).get('pages').find({ id: pageId }).value();
 }
 
-async function put(pageId: string, html: string) {
+async function put(pageId: string, html: string, css: string) {
   const hasPageStore = (await db).has('pages').value();
 
   if (!hasPageStore) {
@@ -38,14 +38,24 @@ async function put(pageId: string, html: string) {
   if (page) {
     pageStore
       .find({ id: pageId })
-      .assign({ id: pageId, fragments: [...page.fragments, { id, html }] })
+      .assign({ id: pageId, fragments: [...page.fragments, { id, html, css }] })
       .write();
   } else {
-    pageStore.push({ id: pageId, fragments: [{ id, html }] }).write();
+    pageStore
+      .push({
+        id: pageId,
+        fragments: [{ id, html, css }],
+      })
+      .write();
   }
 }
 
-async function rep(pageId: string, fragmentId: string, html: string) {
+async function rep(
+  pageId: string,
+  fragmentId: string,
+  html: string,
+  css: string
+) {
   const hasPageStore = (await db).has('pages').value();
 
   if (!hasPageStore) {
@@ -62,7 +72,11 @@ async function rep(pageId: string, fragmentId: string, html: string) {
     );
     const idx = page.fragments.indexOf(htmlFragment);
     const htmlFragments = [...page.fragments];
-    htmlFragments[idx] = { id: htmlFragment.id, html };
+    htmlFragments[idx] = {
+      id: htmlFragment.id,
+      html,
+      css,
+    };
 
     pageStore
       .find({ id: pageId })

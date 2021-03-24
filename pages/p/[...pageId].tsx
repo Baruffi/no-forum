@@ -1,4 +1,4 @@
-import { Page, PageFragment } from 'interfaces/Pages';
+import { Page, PageFragment, Replacement } from 'interfaces/Pages';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -28,6 +28,7 @@ export default function Sandbox({
   const [fragmentId, setFragmentId] = useState<string>('');
   const [userContent, setUserContent] = useState<string>('');
   const [userCache, setUserCache] = useState<string>('');
+  const [styleMode, setStyleMode] = useState<boolean>(false);
 
   const router = useRouter();
   const apiUrl: RequestInfo = `/api/p/${(router.query.pageId as string[]).join(
@@ -60,13 +61,19 @@ export default function Sandbox({
     const htmlFragment = globalContent.find(
       (htmlFragment) => htmlFragment.id === fragmentId
     );
-    const html = userContent;
+
+    const html = `${userContent}${
+      styleMode ? htmlFragment.html : htmlFragment.css
+    }`;
 
     if (htmlFragment && html && htmlFragment.html != html) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'application/json']],
         method: 'PUT',
-        body: JSON.stringify({ fragmentId: htmlFragment.id, html }),
+        body: JSON.stringify({
+          fragmentId: htmlFragment.id,
+          fragment: html,
+        } as Replacement),
       });
 
       const success = await handleResponse(response);
@@ -133,6 +140,25 @@ export default function Sandbox({
     setUserContent(e.target.value.substr(0, maxUserContentLength));
   }
 
+  function getRandomColorFor(fragmentId: string) {
+    return (
+      '#' +
+      (((1 << 24) * ((fragmentId.charCodeAt(0) - 48) / 122)) | 0).toString(16)
+    );
+  }
+
+  function toggleStyleMode() {
+    if (fragmentId) {
+      const htmlFragment = globalContent.find(
+        (htmlFragment) => htmlFragment.id === fragmentId
+      );
+
+      setUserContent(styleMode ? htmlFragment.html : htmlFragment.css);
+    }
+
+    setStyleMode(!styleMode);
+  }
+
   function hoverHtmlFragment(id: string, html: string) {
     if (fragmentId !== id) {
       if (!fragmentId) {
@@ -152,11 +178,14 @@ export default function Sandbox({
       </Head>
 
       <div className={styles.controls}>
-        <textarea
-          value={userContent}
-          onChange={updateUserContent}
-          maxLength={maxUserContentLength}
-        />
+        <div>
+          <textarea
+            value={userContent}
+            onChange={updateUserContent}
+            maxLength={maxUserContentLength}
+          />
+          <button onClick={toggleStyleMode}>Style mode</button>
+        </div>
         {userContent.length}/{maxUserContentLength}
         {fragmentId ? (
           <div>
@@ -176,11 +205,29 @@ export default function Sandbox({
           <div
             key={htmlFragment.id}
             onMouseEnter={() =>
-              hoverHtmlFragment(htmlFragment.id, htmlFragment.html)
+              hoverHtmlFragment(
+                htmlFragment.id,
+                styleMode ? htmlFragment.css : htmlFragment.html
+              )
+            }
+            style={
+              styleMode && htmlFragment.css
+                ? {
+                    position: 'static',
+                    display: 'flex',
+                    minWidth: '100px',
+                    minHeight: '100px',
+                    backgroundColor: getRandomColorFor(htmlFragment.id),
+                  }
+                : {}
             }
             dangerouslySetInnerHTML={{
               __html:
-                fragmentId === htmlFragment.id ? userContent : htmlFragment.html,
+                fragmentId === htmlFragment.id
+                  ? `${userContent}${
+                      styleMode ? htmlFragment.html : htmlFragment.css
+                    }`
+                  : `${htmlFragment.css}${htmlFragment.html}`,
             }}
           />
         ))}

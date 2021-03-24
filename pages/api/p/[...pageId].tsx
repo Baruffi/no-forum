@@ -61,7 +61,7 @@ function customSanitize(html: string) {
               .join('') +
             openedWithNoText
               .reverse()
-              .map((emptyTag) => `</\\s*${emptyTag}(\\s*[\\w\\d-]+=.*?)*?>\\s*`)
+              .map((emptyTag) => `</\\s*${emptyTag}\\s*>\\s*`)
               .join('');
 
           noTextChunks[emptyTags] = '';
@@ -79,38 +79,45 @@ function customSanitize(html: string) {
   parser.write(html);
   parser.end();
 
-  let saferHtml = html;
-
-  console.log('CSS');
+  let cleanHtml = html;
 
   for (const chunk in cssChunks) {
     if (Object.prototype.hasOwnProperty.call(cssChunks, chunk)) {
       const cssChunk = cssChunks[chunk];
-      console.log(chunk);
-      console.log(cssChunk);
-      saferHtml = saferHtml.replace(chunk, cssChunk).trim();
+      cleanHtml = cleanHtml.replace(chunk, cssChunk);
     }
   }
 
-  console.log('NO TEXT');
+  cleanHtml = cleanHtml
+    .replace(/<style(\s*[\w\d-]+=.*?)*?>\s*<\/\s*style\s*>/g, '')
+    .replace(/style=('{2}|"{2})?/g, '');
 
   for (const chunk in noTextChunks) {
     if (Object.prototype.hasOwnProperty.call(noTextChunks, chunk)) {
       const noTextChunk = noTextChunks[chunk];
-      console.log(chunk);
-      console.log(noTextChunk);
-      saferHtml = saferHtml.replace(RegExp(chunk, 'gs'), noTextChunk).trim();
+      cleanHtml = cleanHtml.replace(RegExp(chunk, 'gs'), noTextChunk);
     }
   }
 
-  const remainingTags = saferHtml.match(/<\s*\w+(\s*[\w\d-]+=.*?)*?>/);
+  const cleanStyles = cleanHtml.match(
+    /<style(\s*[\w\d-]+=.*?)*?>.*?<\/\s*style\s*>/gs
+  );
 
-  if (remainingTags && remainingTags.join('') === '<style>') {
-    console.log('ONLY STYLE');
-    return '';
+  let cleanCss = '';
+
+  if (cleanStyles) {
+    for (const cleanStyle of cleanStyles) {
+      cleanHtml = cleanHtml.replace(cleanStyle, '');
+    }
+
+    cleanCss = cleanStyles.join('\n');
   }
 
-  return saferHtml;
+  console.log('CLEAN');
+  console.log(cleanHtml);
+  console.log(cleanCss);
+
+  return { html: cleanHtml.trim(), css: cleanCss.trim() };
 }
 
 function filterHtml(html: string) {
@@ -119,6 +126,7 @@ function filterHtml(html: string) {
     ALLOWED_URI_REGEXP: /^(\/?[^:#/\\])*$/,
   });
 
+  console.log('PURE');
   console.log(purifiedHtml);
 
   return customSanitize(purifiedHtml);
@@ -128,34 +136,39 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const pageId = (req.query.pageId as string[]).join('/');
 
   if (req.method === 'POST') {
-    const body = req.body as string;
+    const fragment = req.body as string;
 
-    if (body.length > maxUserContentLength) {
+    if (fragment.length > maxUserContentLength) {
       res.status(400).json({
         message: `More than ${maxUserContentLength} characters at once not allowed!`,
       });
       return;
     }
 
-    const filteredHtml = filterHtml(body);
+    const filteredHtml = filterHtml(fragment);
 
-    if (filteredHtml) {
-      await PageDataService.put(pageId, filteredHtml);
+    if (filteredHtml.html || filteredHtml.css) {
+      await PageDataService.put(pageId, filteredHtml.html, filteredHtml.css);
     }
   } else if (req.method === 'PUT') {
-    const { fragmentId, html } = req.body as Replacement;
+    const { fragmentId, fragment } = req.body as Replacement;
 
-    if (html.length > maxUserContentLength) {
+    if (fragment.length > maxUserContentLength) {
       res.status(400).json({
         message: `More than ${maxUserContentLength} characters at once not allowed!`,
       });
       return;
     }
 
-    const filteredHtml = filterHtml(html);
+    const filteredHtml = filterHtml(fragment);
 
-    if (filteredHtml) {
-      await PageDataService.rep(pageId, fragmentId, filteredHtml);
+    if (filteredHtml.html || filteredHtml.css) {
+      await PageDataService.rep(
+        pageId,
+        fragmentId,
+        filteredHtml.html,
+        filteredHtml.css
+      );
     }
   } else if (req.method === 'DELETE') {
     await PageDataService.del(pageId, req.body);
