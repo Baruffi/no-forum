@@ -90,7 +90,7 @@ function customSanitize(html: string) {
 
   cleanHtml = cleanHtml
     .replace(/<style(\s*[\w\d-]+=.*?)*?>\s*<\/\s*style\s*>/g, '')
-    .replace(/style=('{2}|"{2})?/g, '');
+    .replace(/style=('{2}|"{2})/g, '');
 
   for (const chunk in noTextChunks) {
     if (Object.prototype.hasOwnProperty.call(noTextChunks, chunk)) {
