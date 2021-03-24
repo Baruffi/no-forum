@@ -14,7 +14,8 @@
     "nanoid": "^3.1.22",
     "next": "10.0.9",
     "react": "17.0.1",
-    "react-dom": "17.0.1"
+    "react-dom": "17.0.1",
+    "string-to-color": "^2.2.2"
   },
   "devDependencies": {
     "@types/lowdb": "^1.0.9",

@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { maxUserContentLength } from 'resources/constants';
 import PageDataService from 'services/page-data-service';
+import stc from 'string-to-color';
 import styles from 'styles/Pages.module.css';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
@@ -153,13 +154,6 @@ export default function Sandbox({
     return !html.includes('<') && html.includes('{');
   }
 
-  function getRandomColorFor(fragmentId: string) {
-    return (
-      '#' +
-      (((1 << 24) * ((fragmentId.charCodeAt(0) - 48) / 122)) | 0).toString(16)
-    );
-  }
-
   return (
     <div className={styles.container}>
       <Head>
@@ -198,7 +192,7 @@ export default function Sandbox({
               showInvisibles
                 ? htmlFragment.invisible
                   ? {
-                      backgroundColor: getRandomColorFor(htmlFragment.id),
+                      backgroundColor: stc(htmlFragment.id),
                       minWidth: '200px',
                       minHeight: '200px',
                       maxWidth: '200px',

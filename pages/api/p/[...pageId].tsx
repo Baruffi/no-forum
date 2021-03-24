@@ -12,6 +12,7 @@ interface ChunkList {
 function customSanitize(html: string) {
   const cssBadUrl = /[\w-]+\s*:\s*url\(\s*(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?\s*\)((.|\s)*?;)?/g;
   const cssBadZIndex = /z-index\s*:\s*(-)?\d\d\d\d+\s*;?/g;
+  const htmlStyleTag = /<style(\s*|([\w-]+=".*?"))*?>.*?<\/\s*style\s*>\s*/gs;
   const htmlEmptyStyleTag = /<style(\s*|([\w-]+="(.|\s)*?"))*?>\s*?<\/\s*style\s*>\s*/g;
   const htmlEmptyStyleAttribute = /\s*style\s*=\s*"\s*"/g;
   const htmlOpenTagStr = '<TAGHERE(\\s*|([\\w-]+="(.|\\s)*?"))*?>\\s*';
@@ -88,7 +89,7 @@ function customSanitize(html: string) {
   parser.end();
 
   let cleanHtml = html;
-  let invisible = false;
+  let cleanCss = '';
 
   console.log('CSS');
 
@@ -121,24 +122,34 @@ function customSanitize(html: string) {
   console.log(cleanHtml);
 
   if (cleanHtml) {
-    const remainingTags = cleanHtml.match(
-      RegExp(htmlOpenTagStr.replace('TAGHERE', '[\\w-]+'), 'g')
-    );
-    const remainingStyleTags = cleanHtml.match(
-      RegExp(htmlOpenTagStr.replace('TAGHERE', 'style'), 'g')
-    );
+    const matchedCss = cleanHtml.match(htmlStyleTag);
+    if (matchedCss) {
+      for (const match of matchedCss) {
+        if (match.includes('<')) {
+          cleanHtml = cleanHtml.replace(match, '');
+          cleanCss += match
+            .replace(
+              RegExp(htmlOpenTagStr.replace('TAGHERE', 'style'), 'g'),
+              ''
+            )
+            .replace(
+              RegExp(htmlCloseTagStr.replace('TAGHERE', 'style'), 'g'),
+              ''
+            );
 
-    if (
-      remainingTags &&
-      remainingStyleTags &&
-      remainingTags.join('') === remainingStyleTags.join('')
-    ) {
-      console.log('ONLY STYLE');
-      invisible = true;
+          if (!cleanCss.trim().endsWith('}')) {
+            cleanCss += '}\n';
+          }
+        }
+      }
     }
   }
 
-  return { cleanHtml, invisible };
+  if (cleanCss) {
+    cleanCss = `<style>\n${cleanCss}</style>`;
+  }
+
+  return { cleanHtml, cleanCss };
 }
 
 function filterHtml(html: string) {
@@ -173,10 +184,14 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return;
     }
 
-    const { cleanHtml, invisible } = filterHtml(body);
+    const { cleanHtml, cleanCss } = filterHtml(body);
 
     if (cleanHtml) {
-      await PageDataService.put(pageId, cleanHtml, invisible);
+      await PageDataService.put(pageId, cleanHtml, false);
+    }
+
+    if (cleanCss) {
+      await PageDataService.put(pageId, cleanCss, true);
     }
   } else if (req.method === 'PUT') {
     const { fragmentId, html } = req.body as Replacement;
@@ -188,10 +203,15 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return;
     }
 
-    const { cleanHtml, invisible } = filterHtml(html);
+    const { cleanHtml, cleanCss } = filterHtml(html);
 
-    if (cleanHtml) {
-      await PageDataService.rep(pageId, fragmentId, cleanHtml, invisible);
+    if (cleanHtml && !cleanCss) {
+      await PageDataService.rep(pageId, fragmentId, cleanHtml, false);
+    } else if (cleanCss && !cleanHtml) {
+      await PageDataService.rep(pageId, fragmentId, cleanCss, true);
+    } else if (cleanHtml && cleanCss) {
+      await PageDataService.rep(pageId, fragmentId, cleanHtml, false);
+      await PageDataService.put(pageId, cleanCss, true);
     }
   } else if (req.method === 'DELETE') {
     await PageDataService.del(pageId, req.body);
