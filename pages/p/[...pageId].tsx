@@ -59,12 +59,10 @@ export default function Sandbox({
   }
 
   async function replace() {
-    const htmlFragment = globalContent.find(
-      (htmlFragment) => htmlFragment.id === fragmentId
-    );
+    const htmlFragment = getCurrentFragment();
     const html = userContent;
 
-    if (htmlFragment && html && htmlFragment.html != html) {
+    if (htmlFragment && html && htmlFragment.html !== html) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'application/json']],
         method: 'PUT',
@@ -84,9 +82,7 @@ export default function Sandbox({
   }
 
   async function remove() {
-    const htmlFragment = globalContent.find(
-      (htmlFragment) => htmlFragment.id === fragmentId
-    );
+    const htmlFragment = getCurrentFragment();
 
     if (htmlFragment) {
       const response = await fetch(apiUrl, {
@@ -108,7 +104,9 @@ export default function Sandbox({
       if (response.status === 200) {
         const newPage = (await response.json()) as Page;
 
-        if (globalContent != newPage.fragments) {
+        if (
+          JSON.stringify(globalContent) !== JSON.stringify(newPage.fragments)
+        ) {
           setGlobalContent(newPage.fragments);
         }
       }
@@ -164,6 +162,10 @@ export default function Sandbox({
     return !html.includes('<') && html.includes('{');
   }
 
+  function getCurrentFragment() {
+    return globalContent.find((htmlFragment) => htmlFragment.id === fragmentId);
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -172,36 +174,50 @@ export default function Sandbox({
       </Head>
 
       <div className={styles.controls}>
-        <textarea
-          value={userContent}
-          onChange={updateUserContent}
-          maxLength={maxUserContentLength}
-        />
-        <sub>
-          {userContent.length}/{maxUserContentLength}
-        </sub>
-        <cite style={{ marginTop: '5px', marginBottom: '5px' }}>
-          {showInvisibles
-            ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
-            : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
-        </cite>
-        <button onClick={toggleShowInvisibles}>
-          {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
-        </button>
-        {fragmentId ? (
-          <div>
-            <button onClick={replace}>Confirm Changes</button>
-            <button onClick={remove}>Delete</button>
-            <button onClick={flushLocal}>Cancel</button>
+        <div className={styles.column}>
+          <textarea
+            value={userContent}
+            onChange={updateUserContent}
+            maxLength={maxUserContentLength}
+          />
+          <sub>
+            {userContent.length}/{maxUserContentLength}
+          </sub>
+          <div className={styles.row}>
+            <button onClick={toggleShowInvisibles}>
+              {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
+            </button>
+            {userContent ? (
+              fragmentId ? (
+                getCurrentFragment()?.html !== userContent ? (
+                  <>
+                    <button onClick={replace}>Confirm Changes</button>
+                    <button onClick={remove}>Delete</button>
+                    <button onClick={flushLocal}>Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={remove}>Delete</button>
+                    <button onClick={flushLocal}>Cancel</button>
+                  </>
+                )
+              ) : (
+                <>
+                  <button onClick={post}>Confirm Changes</button>
+                  <button onClick={flushLocal}>Cancel</button>
+                </>
+              )
+            ) : null}
           </div>
-        ) : (
-          <div>
-            <button onClick={post}>Confirm Changes</button>
-          </div>
-        )}
+          <cite>
+            {showInvisibles
+              ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
+              : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
+          </cite>
+        </div>
       </div>
 
-      <div className={styles.main}>
+      <div className={styles.column}>
         {globalContent.map((htmlFragment) => (
           <div
             key={htmlFragment.id}

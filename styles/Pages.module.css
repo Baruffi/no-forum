@@ -1,17 +1,25 @@
 .container {
   min-height: 100vh;
-  padding: 0 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
-.main {
-  padding: 5rem 0;
+.row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.column {
   flex: 1;
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
 }
@@ -19,13 +27,14 @@
 .controls {
   top: 0 !important;
   position: sticky !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin-top: 10px !important;
-  min-width: 300px !important;
-  min-height: 75px !important;
+  padding: 10px !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  background-color: bisque !important;
+}
+
+.controls cite {
+  margin: 5px !important;
 }
 
 .controls textarea {
@@ -34,6 +43,7 @@
 }
 
 .controls button {
+  margin: 3px;
   min-width: 50px !important;
   min-height: 25px !important;
 }
@@ -43,8 +53,7 @@
 .controls * {
   z-index: 2147483647 !important;
   visibility: visible !important;
-  display: flex !important;
-  max-width: none !important;
-  max-height: none !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
   cursor: auto !important;
 }
