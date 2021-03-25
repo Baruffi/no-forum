@@ -20,8 +20,3 @@ export interface PageDataService {
   ): Promise<void>;
   del(pageId: string, fragmentId: string): Promise<void>;
 }
-
-export interface Replacement {
-  fragmentId: string;
-  html: string;
-}

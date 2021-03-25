@@ -23,18 +23,12 @@
   flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
-
-  /* tags to make sure it will be always visible on top of the screen */
-  z-index: 2147483647 !important;
-  visibility: visible !important;
+  margin-top: 10px !important;
   min-width: 300px !important;
   min-height: 75px !important;
-  max-width: none !important;
-  max-height: none !important;
 }
 
 .controls textarea {
-  margin-top: 10px !important;
   min-width: 300px !important;
   min-height: 50px !important;
 }
@@ -44,10 +38,12 @@
   min-height: 25px !important;
 }
 
+/* tags to make sure it will be always visible on top of the screen */
+.controls,
 .controls * {
-  /* tags to make sure it will be always visible on top of the screen */
   z-index: 2147483647 !important;
   visibility: visible !important;
+  display: flex !important;
   max-width: none !important;
   max-height: none !important;
 }

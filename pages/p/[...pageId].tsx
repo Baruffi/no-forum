@@ -68,7 +68,11 @@ export default function Sandbox({
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'application/json']],
         method: 'PUT',
-        body: JSON.stringify({ fragmentId: htmlFragment.id, html }),
+        body: JSON.stringify({
+          id: htmlFragment.id,
+          html,
+          invisible: htmlFragment.invisible,
+        } as PageFragment),
       });
 
       const success = await handleResponse(response);
@@ -167,7 +171,14 @@ export default function Sandbox({
           onChange={updateUserContent}
           maxLength={maxUserContentLength}
         />
-        {userContent.length}/{maxUserContentLength}
+        <sub>
+          {userContent.length}/{maxUserContentLength}
+        </sub>
+        <cite style={{ marginTop: '5px', marginBottom: '5px' }}>
+          {showInvisibles
+            ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
+            : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
+        </cite>
         <button onClick={toggleShowInvisibles}>
           {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
         </button>
@@ -195,6 +206,8 @@ export default function Sandbox({
                       backgroundColor: stc(htmlFragment.id),
                       minWidth: '200px',
                       minHeight: '200px',
+                      width: '200px',
+                      height: '200px',
                       maxWidth: '200px',
                       maxHeight: '200px',
                     }
