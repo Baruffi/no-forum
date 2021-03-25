@@ -168,11 +168,11 @@ export default function filterHtml(html: string) {
   console.log(html);
 
   if (html.includes('{') && !html.includes('<')) {
-    html = `<style>${html}</style>`;
+    html = `<style>${html}`;
   }
 
   // Add body tags to not lose styles in the beginning to DOMPurify
-  const purifiedHtml = DOMPurify.sanitize(`<body>${html}</body>`, {
+  const purifiedHtml = DOMPurify.sanitize(`<body>${html}`, {
     ALLOWED_URI_REGEXP: /^(\/?[^:#/\\])*$/,
   });
 

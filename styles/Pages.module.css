@@ -46,4 +46,5 @@
   display: flex !important;
   max-width: none !important;
   max-height: none !important;
+  cursor: auto !important;
 }

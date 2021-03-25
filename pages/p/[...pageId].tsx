@@ -154,6 +154,12 @@ export default function Sandbox({
     }
   }
 
+  function hoverUserContent() {
+    if (fragmentId) {
+      flushLocal();
+    }
+  }
+
   function isCss(html: string) {
     return !html.includes('<') && html.includes('{');
   }
@@ -230,6 +236,7 @@ export default function Sandbox({
           />
         ))}
         <div
+          onMouseEnter={hoverUserContent}
           dangerouslySetInnerHTML={{
             __html: fragmentId
               ? isCss(userCache)
