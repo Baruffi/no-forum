@@ -1,8 +1,9 @@
+import htmlMinifier from 'html-minifier';
 import { Parser } from 'htmlparser2';
 import { ChunkList } from 'interfaces/filterHtml';
 import DOMPurify from 'isomorphic-dompurify';
 
-function filterCss(style: string) {
+function filterCssFragment(style: string) {
   const cssBadImportant = /[\w-]+\s*:.*?!important.*?;?/gs;
   const cssBadUrl = /[\w-]+\s*:\s*url\(\s*(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?\s*\)((.|\s)*?;)?/g;
   const cssBadZIndex = /z-index\s*:\s*(-)?\d\d\d\d+\s*;?/g;
@@ -22,16 +23,9 @@ function filterCss(style: string) {
   }
 }
 
-function customSanitize(html: string) {
-  const htmlStyleTag = /<style(\s*|([\w-]+=".*?"))*?>.*?<\/\s*style\s*>\s*/gs;
-  const htmlEmptyStyleTag = /<style(\s*|([\w-]+=".*?"))*?>\s*<\/\s*style\s*>\s*/gs;
-  const htmlEmptyStyleAttribute = /\s*style\s*=\s*"\s*"/g;
-  const htmlOpenTagStr = '<TAGHERE(\\s*|([\\w-]+="(.|\\s)*?"))*?>\\s*';
-  const htmlCloseTagStr = '</\\s*TAGHERE\\s*>\\s*';
+function filterCss(html: string) {
   const cssChunks: ChunkList = {};
-  const noTextChunks: ChunkList = {};
 
-  let openedWithNoText = [];
   let openCss = 0;
 
   const parser = new Parser({
@@ -43,53 +37,15 @@ function customSanitize(html: string) {
       let style = attribs.style;
 
       if (style) {
-        cssChunks[style] = filterCss(style);
+        cssChunks[style] = filterCssFragment(style);
       }
-
-      openedWithNoText.push(name);
     },
     ontext(text) {
       if (openCss) {
-        cssChunks[text] = filterCss(text);
-      }
-
-      if (text.trim()) {
-        openedWithNoText = [];
+        cssChunks[text] = filterCssFragment(text);
       }
     },
     onclosetag(name) {
-      if (openedWithNoText.length > 0 && openedWithNoText[0] === name) {
-        if (
-          !(
-            openedWithNoText.includes('input') ||
-            openedWithNoText.includes('select') ||
-            openedWithNoText.includes('textarea') ||
-            openedWithNoText.includes('button') ||
-            openedWithNoText.includes('fieldset') ||
-            openedWithNoText.includes('datalist') ||
-            openedWithNoText.includes('output') ||
-            openedWithNoText.includes('optgroup')
-          )
-        ) {
-          const emptyTags =
-            openedWithNoText
-              .map(
-                (emptyTag) => `${htmlOpenTagStr.replace('TAGHERE', emptyTag)}`
-              )
-              .join('') +
-            openedWithNoText
-              .reverse()
-              .map(
-                (emptyTag) => `${htmlCloseTagStr.replace('TAGHERE', emptyTag)}`
-              )
-              .join('');
-
-          noTextChunks[emptyTags] = '';
-        }
-
-        openedWithNoText = [];
-      }
-
       if (name === 'style' && openCss) {
         openCss--;
       }
@@ -99,46 +55,34 @@ function customSanitize(html: string) {
   parser.write(html);
   parser.end();
 
-  let cleanHtml = html;
-  let cleanCss = '';
-
-  console.log('CSS');
+  let filteredHtml = html;
 
   for (const chunk in cssChunks) {
     if (Object.prototype.hasOwnProperty.call(cssChunks, chunk)) {
       const cssChunk = cssChunks[chunk];
-      console.log(chunk);
-      console.log(cssChunk);
-      cleanHtml = cleanHtml.replace(chunk, cssChunk).trim();
+      filteredHtml = filteredHtml.replace(chunk, cssChunk).trim();
     }
   }
 
-  console.log('NO TEXT');
+  return filteredHtml;
+}
 
-  for (const chunk in noTextChunks) {
-    if (Object.prototype.hasOwnProperty.call(noTextChunks, chunk)) {
-      const noTextChunk = noTextChunks[chunk];
-      console.log(chunk);
-      console.log(noTextChunk);
-      cleanHtml = cleanHtml.replace(RegExp(chunk, 'g'), noTextChunk).trim();
-    }
-  }
+function isolateCssAndHtml(html: string) {
+  const htmlStyleTag = /<style(\s*|([\w-]+=".*?"))*?>.*?<\/\s*style\s*>\s*/gs;
+  const htmlOpenTagStr = '<TAGHERE(\\s*|([\\w-]+="(.|\\s)*?"))*?>\\s*';
+  const htmlCloseTagStr = '</\\s*TAGHERE\\s*>\\s*';
 
-  console.log('CLEAN');
+  let isolatedHtml = html;
+  let isolatedCss = '';
 
-  cleanHtml = cleanHtml
-    .replace(htmlEmptyStyleTag, '')
-    .replace(htmlEmptyStyleAttribute, '');
+  if (isolatedHtml) {
+    const matchedCss = isolatedHtml.match(htmlStyleTag);
 
-  console.log(cleanHtml);
-
-  if (cleanHtml) {
-    const matchedCss = cleanHtml.match(htmlStyleTag);
     if (matchedCss) {
       for (const match of matchedCss) {
         if (match.includes('<')) {
-          cleanHtml = cleanHtml.replace(match, '');
-          cleanCss += match
+          isolatedHtml = isolatedHtml.replace(match, '');
+          isolatedCss += match
             .replace(
               RegExp(htmlOpenTagStr.replace('TAGHERE', 'style'), 'g'),
               ''
@@ -148,19 +92,19 @@ function customSanitize(html: string) {
               ''
             );
 
-          if (!cleanCss.trim().endsWith('}')) {
-            cleanCss += '}\n';
+          if (isolatedCss.trim() && !isolatedCss.trim().endsWith('}')) {
+            isolatedCss += '}';
           }
         }
       }
     }
   }
 
-  if (cleanCss) {
-    cleanCss = `<style>\n${cleanCss}</style>`;
+  if (isolatedCss) {
+    isolatedCss = `<style>${isolatedCss}</style>`;
   }
 
-  return { cleanHtml, cleanCss };
+  return { isolatedHtml, isolatedCss };
 }
 
 export default function filterHtml(html: string) {
@@ -173,11 +117,47 @@ export default function filterHtml(html: string) {
 
   // Add body tags to not lose styles in the beginning to DOMPurify
   const purifiedHtml = DOMPurify.sanitize(`<body>${html}`, {
-    ALLOWED_URI_REGEXP: /^(\/?[^:#/\\])*$/,
+    ALLOWED_URI_REGEXP: /^((?!\/\/)\/?[^:])*$/,
   });
 
-  console.log('PURE');
+  console.log('PURE HTML');
   console.log(purifiedHtml);
 
-  return customSanitize(purifiedHtml);
+  const filteredHtml = filterCss(purifiedHtml);
+
+  console.log('FILTERED HTML');
+  console.log(filteredHtml);
+
+  const { isolatedHtml, isolatedCss } = isolateCssAndHtml(filteredHtml);
+
+  console.log('ISOLATED HTML');
+  console.log(isolatedHtml);
+
+  console.log('ISOLATED CSS');
+  console.log(isolatedCss);
+
+  const minifiedHtml = htmlMinifier.minify(isolatedHtml, {
+    collapseBooleanAttributes: true,
+    collapseWhitespace: true,
+    conservativeCollapse: true,
+    removeEmptyElements: true,
+    removeEmptyAttributes: true,
+    removeRedundantAttributes: true,
+    removeAttributeQuotes: true,
+  });
+
+  const minifiedCss = htmlMinifier.minify(isolatedCss, {
+    minifyCSS: true,
+  });
+
+  console.log('MINI HTML');
+  console.log(minifiedHtml);
+
+  console.log('MINI CSS');
+  console.log(minifiedCss);
+
+  const cleanHtml = minifiedHtml;
+  const cleanCss = minifiedCss;
+
+  return { cleanHtml, cleanCss };
 }

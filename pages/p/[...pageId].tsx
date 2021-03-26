@@ -1,3 +1,4 @@
+import formatHtml from 'helpers/formatHtml';
 import { Page, PageFragment } from 'interfaces/Pages';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
@@ -23,14 +24,24 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 export default function Sandbox({
   page,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  // Global Content
   const [globalContent, setGlobalContent] = useState<PageFragment[]>(
     page.fragments
   );
+
+  // Fragment Content
   const [fragmentId, setFragmentId] = useState<string>('');
+  const [fragmentWasEdited, setFragmentWasEdited] = useState<boolean>(false);
+
+  // User Content
   const [userContent, setUserContent] = useState<string>('');
   const [userCache, setUserCache] = useState<string>('');
+
+  // Controls
+  const [disableStyles, setDisableStyles] = useState<boolean>(false);
   const [showInvisibles, setShowInvisibles] = useState<boolean>(false);
 
+  // Api
   const router = useRouter();
   const apiUrl: RequestInfo = `/api/p/${(router.query.pageId as string[]).join(
     '/'
@@ -62,7 +73,7 @@ export default function Sandbox({
     const htmlFragment = getCurrentFragment();
     const html = userContent;
 
-    if (htmlFragment && html && htmlFragment.html !== html) {
+    if (htmlFragment && html && fragmentWasEdited) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'application/json']],
         method: 'PUT',
@@ -82,13 +93,11 @@ export default function Sandbox({
   }
 
   async function remove() {
-    const htmlFragment = getCurrentFragment();
-
-    if (htmlFragment) {
+    if (fragmentId) {
       const response = await fetch(apiUrl, {
         headers: [['Content-Type', 'text/html']],
         method: 'DELETE',
-        body: htmlFragment.id,
+        body: fragmentId,
       });
 
       const success = await handleResponse(response);
@@ -103,10 +112,10 @@ export default function Sandbox({
     if (response.ok) {
       if (response.status === 200) {
         const newPage = (await response.json()) as Page;
+        const oldFragmentsStr = JSON.stringify(globalContent);
+        const newFragmentsStr = JSON.stringify(newPage.fragments);
 
-        if (
-          JSON.stringify(globalContent) !== JSON.stringify(newPage.fragments)
-        ) {
+        if (oldFragmentsStr !== newFragmentsStr) {
           setGlobalContent(newPage.fragments);
         }
       }
@@ -123,6 +132,19 @@ export default function Sandbox({
     setUserContent(userCache);
     setUserCache('');
     setFragmentId('');
+    setFragmentWasEdited(false);
+  }
+
+  function getCurrentFragment() {
+    const htmlFragment = globalContent.find(
+      (htmlFragment) => htmlFragment.id === fragmentId
+    );
+
+    return htmlFragment;
+  }
+
+  function isCss(html: string) {
+    return !html.includes('<') && html.includes('{');
   }
 
   useEffect(() => {
@@ -134,11 +156,15 @@ export default function Sandbox({
   }, [userContent]);
 
   function updateUserContent(e: ChangeEvent<HTMLTextAreaElement>) {
-    setUserContent(e.target.value.substr(0, maxUserContentLength));
-  }
+    const updatedContent = e.target.value.substr(0, maxUserContentLength);
 
-  function toggleShowInvisibles() {
-    setShowInvisibles(!showInvisibles);
+    setUserContent(updatedContent);
+
+    if (fragmentId) {
+      const originalContent = formatHtml(getCurrentFragment().html); // format html to match user content
+
+      setFragmentWasEdited(originalContent !== updatedContent);
+    }
   }
 
   function hoverHtmlFragment(id: string, html: string) {
@@ -147,8 +173,12 @@ export default function Sandbox({
         setUserCache(userContent);
       }
 
+      if (fragmentWasEdited) {
+        setFragmentWasEdited(false);
+      }
+
       setFragmentId(id);
-      setUserContent(html);
+      setUserContent(formatHtml(html)); // format html on demand
     }
   }
 
@@ -158,12 +188,12 @@ export default function Sandbox({
     }
   }
 
-  function isCss(html: string) {
-    return !html.includes('<') && html.includes('{');
+  function toggleDisableStyles() {
+    setDisableStyles(!disableStyles);
   }
 
-  function getCurrentFragment() {
-    return globalContent.find((htmlFragment) => htmlFragment.id === fragmentId);
+  function toggleShowInvisibles() {
+    setShowInvisibles(!showInvisibles);
   }
 
   return (
@@ -184,29 +214,30 @@ export default function Sandbox({
             {userContent.length}/{maxUserContentLength}
           </sub>
           <div className={styles.row}>
+            <button onClick={toggleDisableStyles}>
+              {disableStyles ? 'Enable Styles' : 'Disable Styles'}
+            </button>
             <button onClick={toggleShowInvisibles}>
               {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
             </button>
-            {userContent ? (
-              fragmentId ? (
-                getCurrentFragment()?.html !== userContent ? (
-                  <>
-                    <button onClick={replace}>Confirm Changes</button>
-                    <button onClick={remove}>Delete</button>
-                    <button onClick={flushLocal}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={remove}>Delete</button>
-                    <button onClick={flushLocal}>Cancel</button>
-                  </>
-                )
+            {fragmentId ? (
+              fragmentWasEdited && userContent ? (
+                <>
+                  <button onClick={replace}>Confirm Changes</button>
+                  <button onClick={remove}>Delete</button>
+                  <button onClick={flushLocal}>Cancel</button>
+                </>
               ) : (
                 <>
-                  <button onClick={post}>Confirm Changes</button>
+                  <button onClick={remove}>Delete</button>
                   <button onClick={flushLocal}>Cancel</button>
                 </>
               )
+            ) : userContent ? (
+              <>
+                <button onClick={post}>Confirm Changes</button>
+                <button onClick={flushLocal}>Cancel</button>
+              </>
             ) : null}
           </div>
           <cite>
@@ -247,6 +278,8 @@ export default function Sandbox({
                   ? isCss(userContent)
                     ? `<style>${userContent}</style>`
                     : userContent
+                  : htmlFragment.invisible && disableStyles
+                  ? ''
                   : htmlFragment.html,
             }}
           />
