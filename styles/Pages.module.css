@@ -2,8 +2,6 @@
   min-height: 100vh;
   display: flex;
   flex-direction: row;
-  /* justify-content: center;
-  align-items: center; */
 }
 
 .horizontal-container {
@@ -34,82 +32,79 @@
   width: min-content;
 }
 
-.vertical-left-controls {
-  top: 0 !important;
-  left: 0 !important;
-  position: sticky !important;
-  padding: 10px !important;
-  height: 100% !important;
-  min-height: 100vh !important;
-  background-color: bisque !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 2147483647 !important;
+.left {
+  top: 0;
+  left: 0;
+  height: 100%;
+  min-height: 100vh;
 }
 
-.vertical-right-controls {
-  top: 0 !important;
-  right: 0 !important;
-  position: sticky !important;
-  padding: 10px !important;
-  height: 100% !important;
-  min-height: 100vh !important;
-  background-color: bisque !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 2147483647 !important;
+.top {
+  top: 0;
+  width: 100%;
 }
 
-.horizontal-top-controls {
-  top: 0 !important;
-  position: sticky !important;
-  padding: 10px !important;
-  width: 100% !important;
-  min-width: 100% !important;
-  background-color: bisque !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 2147483647 !important;
+.right {
+  top: 0;
+  right: 0;
+  height: 100%;
+  min-height: 100vh;
 }
 
-.horizontal-bottom-controls {
-  bottom: 0 !important;
-  position: sticky !important;
-  padding: 10px !important;
-  width: 100% !important;
-  min-width: 100% !important;
-  background-color: bisque !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
+.bottom {
+  bottom: 0;
+  width: 100%;
+}
+
+.panel {
+  position: sticky;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: bisque;
+  /* tags to make sure it will be always visible on top of the screen */
   z-index: 2147483647 !important;
+  visibility: visible !important;
+  cursor: auto !important;
+}
+
+.controls {
+  /* border: 2px solid; */
+  padding: 10px;
 }
 
 .controls cite {
-  margin: 5px !important;
-  max-width: 100px;
+  font-size: 15px;
+  margin: 5px;
 }
 
 .controls textarea {
-  min-width: 300px !important;
-  min-height: 50px !important;
+  font-size: 16px;
+  min-width: 25vw;
+  min-height: 10vh;
+  outline: none;
+  border: 2px solid;
 }
 
 .controls button {
+  font-size: 16px;
   margin: 3px;
-  min-width: 50px !important;
-  min-height: 25px !important;
+  outline: none;
+  border: 2px solid;
+  cursor: pointer;
 }
 
-/* tags to make sure it will be always visible on top of the screen */
+.controls button:hover {
+  color: white;
+  border-color: black;
+  background-color: black;
+}
+
 .controls,
 .controls * {
-  z-index: 2147483647 !important;
-  visibility: visible !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  cursor: auto !important;
+  color: black;
+  border-color: black;
+  background-color: transparent;
+  max-width: 100%;
+  max-height: 100%;
 }

@@ -38,7 +38,7 @@ export default function PagesHeader({
   }
 
   return (
-    <div className={styles[`${layout.orientation}-${layout.anchor}-controls`]}>
+    <div className={`${styles[layout.anchor]} ${styles.panel}`}>
       <div className={styles.controls}>
         <div className={styles.column}>
           <textarea
