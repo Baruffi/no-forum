@@ -1,7 +1,11 @@
 import htmlMinifier from 'html-minifier';
 import { Parser } from 'htmlparser2';
-import { ChunkList } from 'interfaces/filterHtml';
 import DOMPurify from 'isomorphic-dompurify';
+
+interface Chunk {
+  original: string;
+  filtered: string;
+}
 
 function filterCssFragment(style: string) {
   const cssBadImportant = /[\w-]+\s*:.*?!important.*?;?/gs;
@@ -13,7 +17,7 @@ function filterCssFragment(style: string) {
 
     if (badImportants) {
       for (const badImportant of badImportants) {
-        const noImportant = badImportant.replace('!important', '');
+        const noImportant = badImportant.replace(/!important/g, '');
 
         style = style.replace(badImportant, noImportant);
       }
@@ -24,7 +28,7 @@ function filterCssFragment(style: string) {
 }
 
 function filterCss(html: string) {
-  const cssChunks: ChunkList = {};
+  const cssChunks: Chunk[] = [];
 
   let openCss = 0;
 
@@ -37,12 +41,12 @@ function filterCss(html: string) {
       let style = attribs.style;
 
       if (style) {
-        cssChunks[style] = filterCssFragment(style);
+        cssChunks.push({ original: style, filtered: filterCssFragment(style) });
       }
     },
     ontext(text) {
       if (openCss) {
-        cssChunks[text] = filterCssFragment(text);
+        cssChunks.push({ original: text, filtered: filterCssFragment(text) });
       }
     },
     onclosetag(name) {
@@ -57,11 +61,8 @@ function filterCss(html: string) {
 
   let filteredHtml = html;
 
-  for (const chunk in cssChunks) {
-    if (Object.prototype.hasOwnProperty.call(cssChunks, chunk)) {
-      const cssChunk = cssChunks[chunk];
-      filteredHtml = filteredHtml.replace(chunk, cssChunk).trim();
-    }
+  for (const cssChunk of cssChunks) {
+    filteredHtml = filteredHtml.replace(cssChunk.original, cssChunk.filtered);
   }
 
   return filteredHtml;
