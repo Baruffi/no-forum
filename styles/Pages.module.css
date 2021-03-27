@@ -1,4 +1,12 @@
-.container {
+.vertical-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  /* justify-content: center;
+  align-items: center; */
+}
+
+.horizontal-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -13,6 +21,7 @@
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  height: min-content;
 }
 
 .column {
@@ -22,19 +31,66 @@
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  width: min-content;
 }
 
-.controls {
+.vertical-left-controls {
+  top: 0 !important;
+  left: 0 !important;
+  position: sticky !important;
+  padding: 10px !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  background-color: bisque !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 2147483647 !important;
+}
+
+.vertical-right-controls {
+  top: 0 !important;
+  right: 0 !important;
+  position: sticky !important;
+  padding: 10px !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  background-color: bisque !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 2147483647 !important;
+}
+
+.horizontal-top-controls {
   top: 0 !important;
   position: sticky !important;
   padding: 10px !important;
   width: 100% !important;
   min-width: 100% !important;
   background-color: bisque !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 2147483647 !important;
+}
+
+.horizontal-bottom-controls {
+  bottom: 0 !important;
+  position: sticky !important;
+  padding: 10px !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  background-color: bisque !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 2147483647 !important;
 }
 
 .controls cite {
   margin: 5px !important;
+  max-width: 100px;
 }
 
 .controls textarea {

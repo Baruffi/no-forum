@@ -1,4 +1,7 @@
+import PageBody from 'components/pages-body';
+import PagesHeader from 'components/pages-header';
 import formatHtml from 'helpers/formatHtml';
+import { Layout } from 'interfaces/Layout';
 import { Page, PageFragment } from 'interfaces/Pages';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
@@ -6,7 +9,6 @@ import { useRouter } from 'next/router';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { maxUserContentLength } from 'resources/constants';
 import PageDataService from 'services/page-data-service';
-import stc from 'string-to-color';
 import styles from 'styles/Pages.module.css';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
@@ -38,6 +40,10 @@ export default function Sandbox({
   const [userCache, setUserCache] = useState<string>('');
 
   // Controls
+  const [layout, setLayout] = useState<Layout>({
+    orientation: 'horizontal',
+    anchor: 'top',
+  });
   const [disableStyles, setDisableStyles] = useState<boolean>(false);
   const [showInvisibles, setShowInvisibles] = useState<boolean>(false);
 
@@ -143,10 +149,6 @@ export default function Sandbox({
     return htmlFragment;
   }
 
-  function isCss(html: string) {
-    return !html.includes('<') && html.includes('{');
-  }
-
   useEffect(() => {
     const nextUpdate = setInterval(get, 10000); // passively update the page every 10 seconds unless the user interacts with it
 
@@ -188,6 +190,25 @@ export default function Sandbox({
     }
   }
 
+  function cycleLayout() {
+    switch (layout.anchor) {
+      case 'left':
+        setLayout({ orientation: 'horizontal', anchor: 'top' });
+        break;
+      case 'top':
+        setLayout({ orientation: 'vertical', anchor: 'right' });
+        break;
+      case 'right':
+        setLayout({ orientation: 'horizontal', anchor: 'bottom' });
+        break;
+      case 'bottom':
+        setLayout({ orientation: 'vertical', anchor: 'left' });
+        break;
+      default:
+        break;
+    }
+  }
+
   function toggleDisableStyles() {
     setDisableStyles(!disableStyles);
   }
@@ -197,106 +218,85 @@ export default function Sandbox({
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles[`${layout.orientation}-container`]}>
       <Head>
         <title>Noforum Sandbox Page</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className={styles.controls}>
-        <div className={styles.column}>
-          <textarea
-            value={userContent}
-            onChange={updateUserContent}
-            maxLength={maxUserContentLength}
+      {['top', 'left'].includes(layout.anchor) ? (
+        <>
+          <PagesHeader
+            // config
+            layout={layout}
+            // values
+            userContent={userContent}
+            fragmentId={fragmentId}
+            fragmentWasEdited={fragmentWasEdited}
+            disableStyles={disableStyles}
+            showInvisibles={showInvisibles}
+            // content functions
+            updateUserContent={updateUserContent}
+            cycleLayout={cycleLayout}
+            toggleDisableStyles={toggleDisableStyles}
+            toggleShowInvisibles={toggleShowInvisibles}
+            // api functions
+            post={post}
+            replace={replace}
+            remove={remove}
+            flushLocal={flushLocal}
           />
-          <sub>
-            {userContent.length}/{maxUserContentLength}
-          </sub>
-          <div className={styles.row}>
-            <button onClick={toggleDisableStyles}>
-              {disableStyles ? 'Enable Styles' : 'Disable Styles'}
-            </button>
-            <button onClick={toggleShowInvisibles}>
-              {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
-            </button>
-            {fragmentId ? (
-              fragmentWasEdited && userContent ? (
-                <>
-                  <button onClick={replace}>Confirm Changes</button>
-                  <button onClick={remove}>Delete</button>
-                  <button onClick={flushLocal}>Cancel</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={remove}>Delete</button>
-                  <button onClick={flushLocal}>Cancel</button>
-                </>
-              )
-            ) : userContent ? (
-              <>
-                <button onClick={post}>Confirm Changes</button>
-                <button onClick={flushLocal}>Cancel</button>
-              </>
-            ) : null}
-          </div>
-          <cite>
-            {showInvisibles
-              ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
-              : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
-          </cite>
-        </div>
-      </div>
 
-      <div className={styles.column}>
-        {globalContent.map((htmlFragment) => (
-          <div
-            key={htmlFragment.id}
-            style={
-              showInvisibles
-                ? htmlFragment.invisible
-                  ? {
-                      backgroundColor: stc(htmlFragment.id),
-                      minWidth: '200px',
-                      minHeight: '200px',
-                      width: '200px',
-                      height: '200px',
-                      maxWidth: '200px',
-                      maxHeight: '200px',
-                    }
-                  : {
-                      display: 'none',
-                    }
-                : {}
-            }
-            onMouseEnter={() =>
-              hoverHtmlFragment(htmlFragment.id, htmlFragment.html)
-            }
-            dangerouslySetInnerHTML={{
-              __html:
-                fragmentId === htmlFragment.id
-                  ? isCss(userContent)
-                    ? `<style>${userContent}</style>`
-                    : userContent
-                  : htmlFragment.invisible && disableStyles
-                  ? ''
-                  : htmlFragment.html,
-            }}
+          <PageBody
+            // values
+            globalContent={globalContent}
+            fragmentId={fragmentId}
+            userContent={userContent}
+            userCache={userCache}
+            disableStyles={disableStyles}
+            showInvisibles={showInvisibles}
+            // functions
+            hoverHtmlFragment={hoverHtmlFragment}
+            hoverUserContent={hoverUserContent}
           />
-        ))}
-        <div
-          onMouseEnter={hoverUserContent}
-          dangerouslySetInnerHTML={{
-            __html: fragmentId
-              ? isCss(userCache)
-                ? `<style>${userCache}</style>`
-                : userCache
-              : isCss(userContent)
-              ? `<style>${userContent}</style>`
-              : userContent,
-          }}
-        />
-      </div>
+        </>
+      ) : (
+        <>
+          <PageBody
+            // values
+            globalContent={globalContent}
+            fragmentId={fragmentId}
+            userContent={userContent}
+            userCache={userCache}
+            disableStyles={disableStyles}
+            showInvisibles={showInvisibles}
+            // functions
+            hoverHtmlFragment={hoverHtmlFragment}
+            hoverUserContent={hoverUserContent}
+          />
+
+          <PagesHeader
+            // config
+            layout={layout}
+            // values
+            userContent={userContent}
+            fragmentId={fragmentId}
+            fragmentWasEdited={fragmentWasEdited}
+            disableStyles={disableStyles}
+            showInvisibles={showInvisibles}
+            // content functions
+            updateUserContent={updateUserContent}
+            cycleLayout={cycleLayout}
+            toggleDisableStyles={toggleDisableStyles}
+            toggleShowInvisibles={toggleShowInvisibles}
+            // api functions
+            post={post}
+            replace={replace}
+            remove={remove}
+            flushLocal={flushLocal}
+          />
+        </>
+      )}
     </div>
   );
 }
