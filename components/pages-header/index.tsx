@@ -39,6 +39,15 @@ export default function PagesHeader({
 
   return (
     <div className={`${styles[layout.anchor]} ${styles.panel}`}>
+      <div className={`${styles['spacer-start']} ${styles.controls}`}>
+        <button onClick={cycleLayout}>{getNextLayoutOption()} Layout</button>
+        <button onClick={toggleDisableStyles}>
+          {disableStyles ? 'Enable Styles' : 'Disable Styles'}
+        </button>
+        <button onClick={toggleShowInvisibles}>
+          {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
+        </button>
+      </div>
       <div className={styles.controls}>
         <div className={styles.column}>
           <textarea
@@ -51,15 +60,6 @@ export default function PagesHeader({
             {userContent.length}/{maxUserContentLength}
           </sub>
           <div className={styles.row}>
-            <button onClick={cycleLayout}>
-              {getNextLayoutOption()} Layout
-            </button>
-            <button onClick={toggleDisableStyles}>
-              {disableStyles ? 'Enable Styles' : 'Disable Styles'}
-            </button>
-            <button onClick={toggleShowInvisibles}>
-              {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
-            </button>
             {fragmentId ? (
               fragmentWasEdited && userContent ? (
                 <>
@@ -80,12 +80,19 @@ export default function PagesHeader({
               </>
             ) : null}
           </div>
-          <cite>
-            {showInvisibles
-              ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
-              : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
-          </cite>
         </div>
+      </div>
+      <div className={styles['spacer-end']}>
+        <button className={styles.float}>+</button>
+        <button className={styles.float}>-</button>
+        <button className={styles.float}>T</button>
+      </div>
+      <div className={styles['helper-text']}>
+        <cite>
+          {showInvisibles
+            ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
+            : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
+        </cite>
       </div>
     </div>
   );

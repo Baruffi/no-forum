@@ -12,6 +12,11 @@
   align-items: center;
 }
 
+.main {
+  max-width: 100%;
+  overflow: auto;
+}
+
 .row {
   flex: 1;
   display: flex;
@@ -37,11 +42,13 @@
   left: 0;
   height: 100%;
   min-height: 100vh;
+  width: min-content;
 }
 
 .top {
   top: 0;
   width: 100%;
+  height: min-content;
 }
 
 .right {
@@ -49,33 +56,42 @@
   right: 0;
   height: 100%;
   min-height: 100vh;
+  width: min-content;
 }
 
 .bottom {
   bottom: 0;
   width: 100%;
+  height: min-content;
 }
 
 .panel {
   position: sticky;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   background-color: bisque;
+  padding: 10px;
+  /* display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  justify-items: center; */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   /* tags to make sure it will be always visible on top of the screen */
   z-index: 2147483647 !important;
   visibility: visible !important;
   cursor: auto !important;
 }
 
-.controls {
-  /* border: 2px solid; */
-  padding: 10px;
+.helper-text {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.controls cite {
+.helper-text cite {
   font-size: 15px;
-  margin: 5px;
+  color: black;
+  border-color: black;
+  background-color: transparent;
 }
 
 .controls textarea {
@@ -107,4 +123,44 @@
   background-color: transparent;
   max-width: 100%;
   max-height: 100%;
+}
+
+.spacer-start {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-bottom: 10px;
+  padding-right: 10px;
+}
+
+.spacer-end {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-bottom: 10px;
+  padding-left: 10px;
+}
+
+.float {
+  font-size: 16px;
+  width: 30px;
+  height: 30px;
+  outline: none;
+  border: none;
+  background-color: #121212;
+  color: #fff;
+  border-radius: 30px;
+  margin: 10px;
+  text-align: center;
+  box-shadow: 2px 2px 3px #999;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.float:hover {
+  width: 35px;
+  height: 35px;
+  margin: 5px;
 }

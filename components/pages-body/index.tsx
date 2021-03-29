@@ -19,7 +19,7 @@ export default function PageBody({
   }
 
   return (
-    <div className={styles.column}>
+    <div className={`${styles.main} ${styles.column}`}>
       {globalContent.map((htmlFragment) => (
         <div
           key={htmlFragment.id}
