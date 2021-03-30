@@ -65,6 +65,24 @@
   height: min-content;
 }
 
+.top textarea,
+.bottom textarea {
+  min-width: 100%;
+  max-width: 100%;
+  min-height: 15vh;
+  max-height: 50vh;
+  resize: vertical;
+}
+
+.left textarea,
+.right textarea {
+  min-width: 25vw;
+  max-width: 50vw;
+  min-height: 80vh;
+  max-height: 80vh;
+  resize: horizontal;
+}
+
 .panel {
   position: sticky;
   background-color: bisque;
@@ -81,23 +99,8 @@
   cursor: auto !important;
 }
 
-.helper-text {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.helper-text cite {
-  font-size: 15px;
-  color: black;
-  border-color: black;
-  background-color: transparent;
-}
-
 .controls textarea {
   font-size: 16px;
-  min-width: 25vw;
-  min-height: 10vh;
   outline: none;
   border: 2px solid;
 }
@@ -107,6 +110,8 @@
   margin: 3px;
   outline: none;
   border: 2px solid;
+  border-radius: 10px;
+  background-color: white;
   cursor: pointer;
 }
 
@@ -120,9 +125,28 @@
 .controls * {
   color: black;
   border-color: black;
-  background-color: transparent;
   max-width: 100%;
   max-height: 100%;
+}
+
+.icons button {
+  font-size: 16px;
+  margin: 0;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.icons button img {
+  margin: 10px;
+}
+
+.icons button:hover img {
+  width: 30px;
+  height: 30px;
+  margin: 5px;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .spacer-start {
@@ -141,6 +165,13 @@
   align-items: flex-start;
   padding-bottom: 10px;
   padding-left: 10px;
+}
+
+.spacer-center {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .float {
@@ -163,4 +194,13 @@
   width: 35px;
   height: 35px;
   margin: 5px;
+}
+
+.popup {
+  top: 0;
+  left: 0;
+  width: 1000px;
+  height: 1000px;
+  position: fixed;
+  z-index: 2147483647 !important;
 }

@@ -1,4 +1,5 @@
 import { maxUserContentLength } from 'resources/constants';
+import Image from 'next/image';
 import styles from 'styles/Pages.module.css';
 import { HeaderProps } from './types';
 
@@ -25,13 +26,13 @@ export default function PagesHeader({
   function getNextLayoutOption() {
     switch (layout.anchor) {
       case 'left':
-        return 'Top';
+        return 'up';
       case 'top':
-        return 'Right';
+        return 'forward';
       case 'right':
-        return 'Bottom';
+        return 'down';
       case 'bottom':
-        return 'Left';
+        return 'back';
       default:
         break;
     }
@@ -39,16 +40,35 @@ export default function PagesHeader({
 
   return (
     <div className={`${styles[layout.anchor]} ${styles.panel}`}>
-      <div className={`${styles['spacer-start']} ${styles.controls}`}>
-        <button onClick={cycleLayout}>{getNextLayoutOption()} Layout</button>
+      <div className={`${styles['spacer-start']} ${styles.icons}`}>
+        <button onClick={cycleLayout}>
+          <img
+            src={`/chevron-${getNextLayoutOption()}.svg`}
+            width={25}
+            height={25}
+          />
+        </button>
         <button onClick={toggleDisableStyles}>
-          {disableStyles ? 'Enable Styles' : 'Disable Styles'}
+          <img
+            src={`/color-fill${disableStyles ? '-outline' : ''}.svg`}
+            width={25}
+            height={25}
+          />
         </button>
         <button onClick={toggleShowInvisibles}>
-          {showInvisibles ? 'Hide Invisibles' : 'Show Invisibles'}
+          <img
+            src={`/eye${showInvisibles ? '-off' : ''}.svg`}
+            width={25}
+            height={25}
+          />
         </button>
       </div>
-      <div className={styles.controls}>
+      <div className={styles['spacer-end']}>
+        <button className={styles.float}>+</button>
+        <button className={styles.float}>-</button>
+        <button className={styles.float}>T</button>
+      </div>
+      <div className={`${styles['spacer-center']} ${styles.controls}`}>
         <div className={styles.column}>
           <textarea
             value={userContent}
@@ -81,18 +101,6 @@ export default function PagesHeader({
             ) : null}
           </div>
         </div>
-      </div>
-      <div className={styles['spacer-end']}>
-        <button className={styles.float}>+</button>
-        <button className={styles.float}>-</button>
-        <button className={styles.float}>T</button>
-      </div>
-      <div className={styles['helper-text']}>
-        <cite>
-          {showInvisibles
-            ? 'You can edit style tags here. If you add any other tags, they will be commited as a new visible element!'
-            : 'You can edit the visible html here. If you add any style tags, they will be commited as a new invisible element!'}
-        </cite>
       </div>
     </div>
   );
