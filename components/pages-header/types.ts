@@ -18,6 +18,5 @@ export interface HeaderProps {
   // api functions
   post(): Promise<void>;
   replace(): Promise<void>;
-  remove(): Promise<void>;
   flushLocal(): void;
 }

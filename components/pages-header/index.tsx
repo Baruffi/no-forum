@@ -1,5 +1,4 @@
 import { maxUserContentLength } from 'resources/constants';
-import Image from 'next/image';
 import styles from 'styles/Pages.module.css';
 import { HeaderProps } from './types';
 
@@ -20,7 +19,6 @@ export default function PagesHeader({
   // api functions
   post,
   replace,
-  remove,
   flushLocal,
 }: HeaderProps) {
   function getNextLayoutOption() {
@@ -84,12 +82,10 @@ export default function PagesHeader({
               fragmentWasEdited && userContent ? (
                 <>
                   <button onClick={replace}>Confirm Changes</button>
-                  <button onClick={remove}>Delete</button>
                   <button onClick={flushLocal}>Cancel</button>
                 </>
               ) : (
                 <>
-                  <button onClick={remove}>Delete</button>
                   <button onClick={flushLocal}>Cancel</button>
                 </>
               )

@@ -18,10 +18,13 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <div className={styles['background-top']} />
+      <div className={styles['background-bottom']} />
+
       <main className={styles.main}>
         <h1 className={styles.title}>Welcome to NoForum Sandbox!</h1>
-
-        <p className={styles.description}>
+        <br />
+        <div className={styles.description}>
           Get started by accessing{' '}
           <form
             className={styles.code}
@@ -38,7 +41,7 @@ export default function Home() {
             />
             <button type="submit">Go!</button>
           </form>
-        </p>
+        </div>
       </main>
 
       <footer className={styles.footer}>

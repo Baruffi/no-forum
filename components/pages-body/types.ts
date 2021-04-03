@@ -1,14 +1,19 @@
+import { Layout } from 'interfaces/Layout';
 import { PageFragment } from 'interfaces/Pages';
 
 export interface BodyProps {
+  // config
+  layout: Layout;
   // values
   globalContent: PageFragment[];
   fragmentId: string;
+  fragmentWasEdited: boolean;
   userContent: string;
   userCache: string;
   disableStyles: boolean;
   showInvisibles: boolean;
-  // functions
-  hoverUserContent(): void;
-  hoverHtmlFragment(id: string, html: string): void;
+  // content functions
+  edit(id: string): void;
+  // api functions
+  remove(id: string): Promise<void>;
 }

@@ -6,10 +6,13 @@ import { Page, PageFragment } from 'interfaces/Pages';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { maxUserContentLength } from 'resources/constants';
 import PageDataService from 'services/page-data-service';
 import styles from 'styles/Pages.module.css';
+import swal from 'sweetalert';
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const pageId = (context.query.pageId as string[]).join('/');
@@ -70,13 +73,15 @@ export default function Sandbox({
       const success = await handleResponse(response);
 
       if (success) {
-        flushLocal();
+        handleResponseSuccess();
+      } else {
+        handleResponseError();
       }
     }
   }
 
   async function replace() {
-    const htmlFragment = getCurrentFragment();
+    const htmlFragment = getFragment(fragmentId);
     const html = userContent;
 
     if (htmlFragment && html && fragmentWasEdited) {
@@ -93,23 +98,41 @@ export default function Sandbox({
       const success = await handleResponse(response);
 
       if (success) {
-        flushLocal();
+        handleResponseSuccess();
+      } else {
+        handleResponseError();
       }
     }
   }
 
-  async function remove() {
-    if (fragmentId) {
-      const response = await fetch(apiUrl, {
-        headers: [['Content-Type', 'text/html']],
-        method: 'DELETE',
-        body: fragmentId,
+  async function remove(id: string) {
+    if (id) {
+      const confirmation = await swal({
+        title: 'Are you sure?',
+        text:
+          'Once deleted, you will not be able to recover this html fragment!',
+        icon: 'warning',
+        buttons: [true, true],
+        dangerMode: true,
       });
 
-      const success = await handleResponse(response);
+      if (confirmation) {
+        const response = await fetch(apiUrl, {
+          headers: [['Content-Type', 'text/html']],
+          method: 'DELETE',
+          body: id,
+        });
 
-      if (success) {
-        flushLocal();
+        const success = await handleResponse(response);
+
+        if (success) {
+          swal('Poof!', 'The html fragment has been deleted!', 'success');
+          handleResponseSuccess();
+        } else {
+          handleResponseError();
+        }
+      } else {
+        swal('The html fragment is safe!');
       }
     }
   }
@@ -128,10 +151,17 @@ export default function Sandbox({
 
       return true;
     } else {
-      console.error('Error communicating with the serverside api!');
-
       return false;
     }
+  }
+
+  function handleResponseSuccess() {
+    toast.success('Success :)');
+    flushLocal();
+  }
+
+  function handleResponseError() {
+    toast.error('Something went wrong :(');
   }
 
   function flushLocal() {
@@ -141,9 +171,9 @@ export default function Sandbox({
     setFragmentWasEdited(false);
   }
 
-  function getCurrentFragment() {
+  function getFragment(id: string) {
     const htmlFragment = globalContent.find(
-      (htmlFragment) => htmlFragment.id === fragmentId
+      (htmlFragment) => htmlFragment.id === id
     );
 
     return htmlFragment;
@@ -163,13 +193,13 @@ export default function Sandbox({
     setUserContent(updatedContent);
 
     if (fragmentId) {
-      const originalContent = formatHtml(getCurrentFragment().html); // format html to match user content
+      const originalContent = formatHtml(getFragment(fragmentId).html); // format html to match user content
 
       setFragmentWasEdited(originalContent !== updatedContent);
     }
   }
 
-  function hoverHtmlFragment(id: string, html: string) {
+  function edit(id: string) {
     if (fragmentId !== id) {
       if (!fragmentId) {
         setUserCache(userContent);
@@ -180,13 +210,7 @@ export default function Sandbox({
       }
 
       setFragmentId(id);
-      setUserContent(formatHtml(html)); // format html on demand
-    }
-  }
-
-  function hoverUserContent() {
-    if (fragmentId) {
-      flushLocal();
+      setUserContent(formatHtml(getFragment(id).html)); // format html on demand
     }
   }
 
@@ -209,6 +233,32 @@ export default function Sandbox({
     }
   }
 
+  function layoutToast() {
+    switch (layout.anchor) {
+      case 'left':
+      case 'top':
+        return 'bottom-right';
+      case 'right':
+      case 'bottom':
+        return 'top-left';
+      default:
+        break;
+    }
+  }
+
+  function newestOnTop() {
+    switch (layout.anchor) {
+      case 'left':
+      case 'top':
+        return false;
+      case 'right':
+      case 'bottom':
+        return true;
+      default:
+        break;
+    }
+  }
+
   function toggleDisableStyles() {
     setDisableStyles(!disableStyles);
   }
@@ -218,85 +268,105 @@ export default function Sandbox({
   }
 
   return (
-    <div className={styles[`${layout.orientation}-container`]}>
-      <Head>
-        <title>Noforum Sandbox Page</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <>
+      <ToastContainer
+        position={layoutToast()}
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={newestOnTop()}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
 
-      {['top', 'left'].includes(layout.anchor) ? (
-        <>
-          <PagesHeader
-            // config
-            layout={layout}
-            // values
-            userContent={userContent}
-            fragmentId={fragmentId}
-            fragmentWasEdited={fragmentWasEdited}
-            disableStyles={disableStyles}
-            showInvisibles={showInvisibles}
-            // content functions
-            updateUserContent={updateUserContent}
-            cycleLayout={cycleLayout}
-            toggleDisableStyles={toggleDisableStyles}
-            toggleShowInvisibles={toggleShowInvisibles}
-            // api functions
-            post={post}
-            replace={replace}
-            remove={remove}
-            flushLocal={flushLocal}
-          />
+      <div className={styles[`${layout.orientation}-container`]}>
+        <Head>
+          <title>Noforum Sandbox Page</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
 
-          <PageBody
-            // values
-            globalContent={globalContent}
-            fragmentId={fragmentId}
-            userContent={userContent}
-            userCache={userCache}
-            disableStyles={disableStyles}
-            showInvisibles={showInvisibles}
-            // functions
-            hoverHtmlFragment={hoverHtmlFragment}
-            hoverUserContent={hoverUserContent}
-          />
-        </>
-      ) : (
-        <>
-          <PageBody
-            // values
-            globalContent={globalContent}
-            fragmentId={fragmentId}
-            userContent={userContent}
-            userCache={userCache}
-            disableStyles={disableStyles}
-            showInvisibles={showInvisibles}
-            // functions
-            hoverHtmlFragment={hoverHtmlFragment}
-            hoverUserContent={hoverUserContent}
-          />
+        {['top', 'left'].includes(layout.anchor) ? (
+          <>
+            <PagesHeader
+              // config
+              layout={layout}
+              // values
+              userContent={userContent}
+              fragmentId={fragmentId}
+              fragmentWasEdited={fragmentWasEdited}
+              disableStyles={disableStyles}
+              showInvisibles={showInvisibles}
+              // content functions
+              updateUserContent={updateUserContent}
+              cycleLayout={cycleLayout}
+              toggleDisableStyles={toggleDisableStyles}
+              toggleShowInvisibles={toggleShowInvisibles}
+              // api functions
+              post={post}
+              replace={replace}
+              flushLocal={flushLocal}
+            />
 
-          <PagesHeader
-            // config
-            layout={layout}
-            // values
-            userContent={userContent}
-            fragmentId={fragmentId}
-            fragmentWasEdited={fragmentWasEdited}
-            disableStyles={disableStyles}
-            showInvisibles={showInvisibles}
-            // content functions
-            updateUserContent={updateUserContent}
-            cycleLayout={cycleLayout}
-            toggleDisableStyles={toggleDisableStyles}
-            toggleShowInvisibles={toggleShowInvisibles}
-            // api functions
-            post={post}
-            replace={replace}
-            remove={remove}
-            flushLocal={flushLocal}
-          />
-        </>
-      )}
-    </div>
+            <PageBody
+              // config
+              layout={layout}
+              // values
+              globalContent={globalContent}
+              fragmentId={fragmentId}
+              fragmentWasEdited={fragmentWasEdited}
+              userContent={userContent}
+              userCache={userCache}
+              disableStyles={disableStyles}
+              showInvisibles={showInvisibles}
+              // content functions
+              edit={edit}
+              // api functions
+              remove={remove}
+            />
+          </>
+        ) : (
+          <>
+            <PageBody
+              // config
+              layout={layout}
+              // values
+              globalContent={globalContent}
+              fragmentId={fragmentId}
+              fragmentWasEdited={fragmentWasEdited}
+              userContent={userContent}
+              userCache={userCache}
+              disableStyles={disableStyles}
+              showInvisibles={showInvisibles}
+              // content functions
+              edit={edit}
+              // api functions
+              remove={remove}
+            />
+
+            <PagesHeader
+              // config
+              layout={layout}
+              // values
+              userContent={userContent}
+              fragmentId={fragmentId}
+              fragmentWasEdited={fragmentWasEdited}
+              disableStyles={disableStyles}
+              showInvisibles={showInvisibles}
+              // content functions
+              updateUserContent={updateUserContent}
+              cycleLayout={cycleLayout}
+              toggleDisableStyles={toggleDisableStyles}
+              toggleShowInvisibles={toggleShowInvisibles}
+              // api functions
+              post={post}
+              replace={replace}
+              flushLocal={flushLocal}
+            />
+          </>
+        )}
+      </div>
+    </>
   );
 }

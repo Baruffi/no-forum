@@ -1,14 +1,42 @@
 .container {
+  position: relative;
   min-height: 100vh;
-  padding: 0 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
+}
+
+.background-top {
+  position: absolute;
+  top: -119%;
+  left: -119%;
+  width: 231%;
+  height: 231%;
+  z-index: -1;
+  background-image: url(/wave.svg);
+  background-color: #ffbe4b;
+  background-repeat: no-repeat;
+  transform: rotate(135deg);
+}
+
+.background-bottom {
+  position: absolute;
+  bottom: -119%;
+  right: -119%;
+  width: 231%;
+  height: 231%;
+  z-index: -1;
+  background-image: url(/wave.svg);
+  background-color: #ffbe4b;
+  background-repeat: no-repeat;
+  transform: rotate(-45deg);
 }
 
 .main {
   padding: 5rem 0;
+  margin: 0 5rem;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -19,7 +47,9 @@
 .footer {
   width: 100%;
   height: 100px;
-  border-top: 1px solid #eaeaea;
+  padding: 10px;
+  color: #fafafa;
+  background-color: #181c20;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -63,32 +93,30 @@
 }
 
 .code {
-  background: #fafafa;
-  border-radius: 5px;
+  color: #fafafa;
+  background: #181c20;
+  opacity: 0.9;
+  border-radius: 10px;
   padding: 0.75rem;
   font-size: 1.1rem;
   font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
     Bitstream Vera Sans Mono, Courier New, monospace;
 }
 
-.code input, .code button {
+.code input {
+  background: #b0b0b0;
   border-radius: 5px;
   padding: 0.5rem;
   font-size: 1.1rem;
 }
 
-.grid {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  max-width: 800px;
-  margin-top: 3rem;
+.code * {
+  opacity: 1;
 }
 
 .card {
   margin: 1rem;
-  padding: 1.5rem;
+  padding: 1rem;
   text-align: left;
   color: inherit;
   text-decoration: none;
@@ -104,24 +132,25 @@
   border-color: #0070f3;
 }
 
-.card h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
+@media (max-width: 1919px) {
+  .background-top {
+    width: 211%;
+    height: 211%;
+    top: -105%;
+    left: -105%;
+  }
+
+  .background-bottom {
+    width: 211%;
+    height: 211%;
+    bottom: -105%;
+    right: -105%;
+  }
 }
 
-.card p {
-  margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.5;
-}
-
-.logo {
-  height: 1em;
-}
-
-@media (max-width: 600px) {
-  .grid {
-    width: 100%;
-    flex-direction: column;
+@media (max-width: 1279px) {
+  .background-bottom,
+  .background-top {
+    background-image: none;
   }
 }

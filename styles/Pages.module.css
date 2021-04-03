@@ -2,6 +2,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: row;
+  /* background-color: #121212; */
+  /* color: #fafafa; */
 }
 
 .horizontal-container {
@@ -10,6 +12,8 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  /* background-color: #121212; */
+  /* color: #fafafa; */
 }
 
 .main {
@@ -85,7 +89,7 @@
 
 .panel {
   position: sticky;
-  background-color: bisque;
+  background-color: #FFBE4B;
   padding: 10px;
   /* display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -93,8 +97,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  /* tags to make sure it will be always visible on top of the screen */
-  z-index: 2147483647 !important;
+  /* make sure it will be always visible and easy to interact with */
   visibility: visible !important;
   cursor: auto !important;
 }
@@ -109,22 +112,21 @@
   font-size: 16px;
   margin: 3px;
   outline: none;
-  border: 2px solid;
   border-radius: 10px;
-  background-color: white;
+  color: white;
+  background-color: #181c20;
   cursor: pointer;
 }
 
 .controls button:hover {
   color: white;
-  border-color: black;
   background-color: black;
 }
 
 .controls,
 .controls * {
-  color: black;
-  border-color: black;
+  color: #181c20;
+  border-color: #181c20;
   max-width: 100%;
   max-height: 100%;
 }
@@ -132,6 +134,7 @@
 .icons button {
   font-size: 16px;
   margin: 0;
+  padding: 0;
   outline: none;
   border: none;
   background-color: transparent;
@@ -194,13 +197,4 @@
   width: 35px;
   height: 35px;
   margin: 5px;
-}
-
-.popup {
-  top: 0;
-  left: 0;
-  width: 1000px;
-  height: 1000px;
-  position: fixed;
-  z-index: 2147483647 !important;
 }
