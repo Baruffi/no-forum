@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment } from 'react';
 import ReactTooltip from 'react-tooltip';
 import stc from 'string-to-color';
 import styles from 'styles/Pages.module.css';
@@ -7,6 +7,7 @@ import { BodyProps } from './types';
 export default function PageBody({
   // config
   layout,
+  isTooltipVisible,
   // values
   globalContent,
   fragmentId,
@@ -20,12 +21,6 @@ export default function PageBody({
   // api functions
   remove,
 }: BodyProps) {
-  const [isTooltipVisible, setTooltipVisibility] = useState(false);
-
-  useEffect(() => {
-    setTooltipVisibility(true);
-  }, []);
-
   function getTooltipPosition() {
     switch (layout.anchor) {
       case 'left':
@@ -50,8 +45,9 @@ export default function PageBody({
       {globalContent.map((htmlFragment) => (
         <Fragment key={htmlFragment.id}>
           <div
-            data-for="edit"
+            data-for="options"
             data-tip={htmlFragment.id}
+            className={fragmentId === htmlFragment.id ? styles.fragment : ''}
             style={
               showInvisibles
                 ? htmlFragment.invisible
@@ -84,7 +80,7 @@ export default function PageBody({
           {isTooltipVisible && (
             <ReactTooltip
               className={styles.icons}
-              id="edit"
+              id="options"
               type="light"
               effect="solid"
               place={getTooltipPosition()}
@@ -94,12 +90,25 @@ export default function PageBody({
               delayUpdate={500}
               getContent={(dataTip) => (
                 <div>
-                  <button onClick={() => edit(dataTip)}>
+                  <button
+                    data-for="edit"
+                    data-tip="Edit"
+                    onClick={() => edit(dataTip)}
+                  >
                     <img src="/create.svg" width={25} height={25} />
                   </button>
-                  <button onClick={() => remove(dataTip)}>
+
+                  <ReactTooltip id="edit" effect="solid" place="top" />
+
+                  <button
+                    data-for="remove"
+                    data-tip="Remove"
+                    onClick={() => remove(dataTip)}
+                  >
                     <img src="/trash.svg" width={25} height={25} />
                   </button>
+
+                  <ReactTooltip id="remove" effect="solid" place="top" />
                 </div>
               )}
             />

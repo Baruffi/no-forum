@@ -4,6 +4,7 @@ import { ChangeEvent } from 'react';
 export interface HeaderProps {
   // config
   layout: Layout;
+  isTooltipVisible: boolean;
   // values
   userContent: string;
   fragmentId: string;

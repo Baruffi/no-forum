@@ -29,19 +29,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 export default function Sandbox({
   page,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  // Load
+  const [isTooltipVisible, setTooltipVisibility] = useState(false);
   // Global Content
   const [globalContent, setGlobalContent] = useState<PageFragment[]>(
     page.fragments
   );
-
   // Fragment Content
   const [fragmentId, setFragmentId] = useState<string>('');
   const [fragmentWasEdited, setFragmentWasEdited] = useState<boolean>(false);
-
   // User Content
   const [userContent, setUserContent] = useState<string>('');
   const [userCache, setUserCache] = useState<string>('');
-
   // Controls
   const [layout, setLayout] = useState<Layout>({
     orientation: 'horizontal',
@@ -49,7 +48,6 @@ export default function Sandbox({
   });
   const [disableStyles, setDisableStyles] = useState<boolean>(false);
   const [showInvisibles, setShowInvisibles] = useState<boolean>(false);
-
   // Api
   const router = useRouter();
   const apiUrl: RequestInfo = `/api/p/${(router.query.pageId as string[]).join(
@@ -180,6 +178,10 @@ export default function Sandbox({
   }
 
   useEffect(() => {
+    setTooltipVisibility(true);
+  }, []);
+
+  useEffect(() => {
     const nextUpdate = setInterval(get, 10000); // passively update the page every 10 seconds unless the user interacts with it
 
     return () => {
@@ -292,6 +294,7 @@ export default function Sandbox({
             <PagesHeader
               // config
               layout={layout}
+              isTooltipVisible={isTooltipVisible}
               // values
               userContent={userContent}
               fragmentId={fragmentId}
@@ -312,6 +315,7 @@ export default function Sandbox({
             <PageBody
               // config
               layout={layout}
+              isTooltipVisible={isTooltipVisible}
               // values
               globalContent={globalContent}
               fragmentId={fragmentId}
@@ -331,6 +335,7 @@ export default function Sandbox({
             <PageBody
               // config
               layout={layout}
+              isTooltipVisible={isTooltipVisible}
               // values
               globalContent={globalContent}
               fragmentId={fragmentId}
@@ -348,6 +353,7 @@ export default function Sandbox({
             <PagesHeader
               // config
               layout={layout}
+              isTooltipVisible={isTooltipVisible}
               // values
               userContent={userContent}
               fragmentId={fragmentId}

@@ -4,6 +4,7 @@ import { PageFragment } from 'interfaces/Pages';
 export interface BodyProps {
   // config
   layout: Layout;
+  isTooltipVisible: boolean;
   // values
   globalContent: PageFragment[];
   fragmentId: string;
