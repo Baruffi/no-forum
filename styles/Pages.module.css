@@ -1,7 +1,6 @@
 .page {
   display: flex;
   height: 100vh;
-  overflow: auto;
 }
 
 .vertical-left {
@@ -21,7 +20,7 @@
 }
 
 .container {
-  width: max-content;
+  overflow: auto;
 }
 
 .row {
