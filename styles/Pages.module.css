@@ -89,13 +89,7 @@
   resize: horizontal;
 }
 
-.fake-panel {
-  visibility: hidden;
-  position: static;
-}
-
 .panel {
-  position: sticky;
   background-color: #ffbe4b;
   padding: 10px;
   display: flex;
