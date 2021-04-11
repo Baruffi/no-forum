@@ -270,7 +270,57 @@ export default function Sandbox({
   }
 
   return (
-    <>
+    <div
+      className={`${styles.page} ${
+        styles[`${layout.orientation}-${layout.anchor}`]
+      }`}
+    >
+      <Head>
+        <title>Noforum Sandbox Page</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <PagesHeader
+        // config
+        layout={layout}
+        isTooltipVisible={isTooltipVisible}
+        // values
+        userContent={userContent}
+        fragmentId={fragmentId}
+        fragmentWasEdited={fragmentWasEdited}
+        disableStyles={disableStyles}
+        showInvisibles={showInvisibles}
+        // content functions
+        updateUserContent={updateUserContent}
+        cycleLayout={cycleLayout}
+        toggleDisableStyles={toggleDisableStyles}
+        toggleShowInvisibles={toggleShowInvisibles}
+        // api functions
+        post={post}
+        replace={replace}
+        flushLocal={flushLocal}
+      />
+
+      <div className={styles.container}>
+        <PageBody
+          // config
+          layout={layout}
+          isTooltipVisible={isTooltipVisible}
+          // values
+          globalContent={globalContent}
+          fragmentId={fragmentId}
+          fragmentWasEdited={fragmentWasEdited}
+          userContent={userContent}
+          userCache={userCache}
+          disableStyles={disableStyles}
+          showInvisibles={showInvisibles}
+          // content functions
+          edit={edit}
+          // api functions
+          remove={remove}
+        />
+      </div>
+
       <ToastContainer
         position={layoutToast()}
         autoClose={5000}
@@ -282,97 +332,6 @@ export default function Sandbox({
         draggable
         pauseOnHover
       />
-
-      <div className={styles[`${layout.orientation}-container`]}>
-        <Head>
-          <title>Noforum Sandbox Page</title>
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
-
-        {['top', 'left'].includes(layout.anchor) ? (
-          <>
-            <PagesHeader
-              // config
-              layout={layout}
-              isTooltipVisible={isTooltipVisible}
-              // values
-              userContent={userContent}
-              fragmentId={fragmentId}
-              fragmentWasEdited={fragmentWasEdited}
-              disableStyles={disableStyles}
-              showInvisibles={showInvisibles}
-              // content functions
-              updateUserContent={updateUserContent}
-              cycleLayout={cycleLayout}
-              toggleDisableStyles={toggleDisableStyles}
-              toggleShowInvisibles={toggleShowInvisibles}
-              // api functions
-              post={post}
-              replace={replace}
-              flushLocal={flushLocal}
-            />
-
-            <PageBody
-              // config
-              layout={layout}
-              isTooltipVisible={isTooltipVisible}
-              // values
-              globalContent={globalContent}
-              fragmentId={fragmentId}
-              fragmentWasEdited={fragmentWasEdited}
-              userContent={userContent}
-              userCache={userCache}
-              disableStyles={disableStyles}
-              showInvisibles={showInvisibles}
-              // content functions
-              edit={edit}
-              // api functions
-              remove={remove}
-            />
-          </>
-        ) : (
-          <>
-            <PageBody
-              // config
-              layout={layout}
-              isTooltipVisible={isTooltipVisible}
-              // values
-              globalContent={globalContent}
-              fragmentId={fragmentId}
-              fragmentWasEdited={fragmentWasEdited}
-              userContent={userContent}
-              userCache={userCache}
-              disableStyles={disableStyles}
-              showInvisibles={showInvisibles}
-              // content functions
-              edit={edit}
-              // api functions
-              remove={remove}
-            />
-
-            <PagesHeader
-              // config
-              layout={layout}
-              isTooltipVisible={isTooltipVisible}
-              // values
-              userContent={userContent}
-              fragmentId={fragmentId}
-              fragmentWasEdited={fragmentWasEdited}
-              disableStyles={disableStyles}
-              showInvisibles={showInvisibles}
-              // content functions
-              updateUserContent={updateUserContent}
-              cycleLayout={cycleLayout}
-              toggleDisableStyles={toggleDisableStyles}
-              toggleShowInvisibles={toggleShowInvisibles}
-              // api functions
-              post={post}
-              replace={replace}
-              flushLocal={flushLocal}
-            />
-          </>
-        )}
-      </div>
-    </>
+    </div>
   );
 }
