@@ -98,6 +98,7 @@
   /* make sure it will be always visible and easy to interact with */
   visibility: visible !important;
   cursor: auto !important;
+  z-index: 1000 !important;
 }
 
 .controls textarea {
@@ -206,4 +207,12 @@
   100% {
     box-shadow: 0.25em 0.25em 0 0 #ff843d;
   }
+}
+
+.tip {
+  z-index: 2000 !important;
+}
+
+.toast {
+  z-index: 3000 !important;
 }

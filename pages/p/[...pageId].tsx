@@ -322,6 +322,7 @@ export default function Sandbox({
       </div>
 
       <ToastContainer
+        className={styles.toast}
         position={layoutToast()}
         autoClose={5000}
         hideProgressBar={false}

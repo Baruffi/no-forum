@@ -1,5 +1,5 @@
 import { PageFragment } from 'interfaces/Pages';
-import { CSSProperties } from 'react';
+import { CSSProperties, useEffect } from 'react';
 import ReactTooltip from 'react-tooltip';
 import stc from 'string-to-color';
 import styles from 'styles/Pages.module.css';
@@ -79,8 +79,12 @@ export default function PageBody({
     return fragmentId ? getAsCss(userCache) : getAsCss(userContent);
   }
 
+  useEffect(() => {
+    ReactTooltip.rebuild();
+  }, [globalContent]);
+
   return (
-    <div className={styles.column}>
+    <div className={styles.column} style={{ width: '100%' }}>
       {globalContent.map((htmlFragment) => (
         <div
           key={htmlFragment.id}
@@ -100,7 +104,7 @@ export default function PageBody({
       />
       {isTooltipVisible && (
         <ReactTooltip
-          className={styles.icons}
+          className={`${styles.tip} ${styles.icons}`}
           aria-haspopup="true"
           id="options"
           type="light"
